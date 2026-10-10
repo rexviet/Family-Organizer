@@ -1,0 +1,80 @@
+agent/tests/unit/test_app.py
+  s_409924ee63d935::t_34a5947c09cbd5 116
+  s_409924ee63d935::t_3343b8c0dfc111 288-290,305-307
+  s_409924ee63d935::t_a841f8bee9f7e2 1-18,20-37,40-115,117-276
+  s_409924ee63d935::t_b97f1137eaf1b9 19,38-39,277-287,291-304,308-336
+agent/.gitignore
+  s_409924ee63d935::t_329c3177f9890f 1-5
+agent/src/family_agent/settings.py
+  s_409924ee63d935::t_b9bc6948c7e79a 1-14,16-33,35-38,41,45-64
+  s_409924ee63d935::t_e37e96f8598e02 15,39-40,42-44
+  s_409924ee63d935::t_4b6a488fb1b55d 34
+agent/.dockerignore
+  s_409924ee63d935::t_7a710dec1a512a 1-11
+plans/261010-1652-ai-agent/phase-03-agent-service.md
+  s_409924ee63d935::t_8a00c9913db291 62,78-85
+  s_409924ee63d935::t_a5abd7000557fa 3,54-61,63-77
+agent/src/family_agent/app.py
+  s_409924ee63d935::t_daf5accc1f568d 1-24,26-75,77-79,81-166,172-174,176,178,180-183,187-189,191-193,195-197,199,201,205,209-225
+  s_409924ee63d935::t_34a5947c09cbd5 175
+  s_409924ee63d935::t_fc302f4c28cfc4 76,80,167-171,177,179,184-186,190,194,198,200,202-204,206-208
+  s_409924ee63d935::t_3343b8c0dfc111 25
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_a5abd7000557fa 33
+agent/tests/contract/test_vectors.py
+  s_409924ee63d935::t_3c1c809bc2f458 1-93
+  s_409924ee63d935::t_b97f1137eaf1b9 94-99
+agent/tests/conftest.py
+  s_409924ee63d935::t_56972643b21fa3 1-13
+  s_409924ee63d935::t_b97f1137eaf1b9 14-20
+agent/pyproject.toml
+  s_409924ee63d935::t_2420a3d6224ca1 45
+  s_409924ee63d935::t_8a96cea780ab0d 51
+  s_409924ee63d935::t_329c3177f9890f 1-37,39-42,46-50
+  s_409924ee63d935::t_9beac069452adb 38,43-44
+agent/tests/unit/test_model.py
+  s_409924ee63d935::t_b97f1137eaf1b9 5,12-13,28-32
+  s_409924ee63d935::t_56972643b21fa3 1-4,6-11,14-27
+agent/src/family_agent/__init__.py
+  s_409924ee63d935::t_329c3177f9890f 1
+agent/Dockerfile
+  s_409924ee63d935::t_7a710dec1a512a 1-29
+agent/tests/unit/test_settings.py
+  s_409924ee63d935::t_56972643b21fa3 1-4,6-44,46-51,53-55,57-59,63-69
+  s_409924ee63d935::t_9beac069452adb 60-62
+  s_409924ee63d935::t_b97f1137eaf1b9 5,45,52,56,70-88
+agent/src/family_agent/contract.py
+  s_409924ee63d935::t_6403107710fbcb 296
+  s_409924ee63d935::t_d843fb260ef49c 1-144,148-295
+  s_409924ee63d935::t_e37e96f8598e02 145-147
+agent/README.md
+  s_409924ee63d935::t_8a00c9913db291 21,37,50-51
+  s_409924ee63d935::t_8f08afbc8f7a96 1-20,22-36,38-49,52-104
+plans/261010-1652-ai-agent/phase-04-agent-harness.md
+  s_409924ee63d935::t_8a00c9913db291 59-65
+agent/src/family_agent/model.py
+  s_409924ee63d935::t_b9bc6948c7e79a 1-4,6-11,13,15-23,31-33
+  s_409924ee63d935::t_e37e96f8598e02 5,12,14,24-30
+agent/src/family_agent/__main__.py
+  s_409924ee63d935::t_36a902c879f086 1-31
+agent/tests/unit/test_main.py
+  s_409924ee63d935::t_e528891425b6ce 1-24
+agent/uv.lock
+  s_409924ee63d935::t_87c324c45fe7ef 1-895
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f17e3e6dcab1f852d0f46bc9bf6fee537db1d206",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
