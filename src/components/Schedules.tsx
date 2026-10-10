@@ -30,7 +30,7 @@ import {
   Flame,
   X
 } from "lucide-react";
-import { FamilyPlan, User, UserRole, isLimitedViewer, FAMILY_RELATION_LABELS } from "../types.js";
+import { FamilyPlan, User, UserRole, FAMILY_RELATION_LABELS } from "../types.js";
 import { motion, AnimatePresence } from "motion/react";
 import { useConfirm } from "./ConfirmDialog.js";
 import { DateTimePicker24, formatDateTimeVN } from "./DateTimePicker24.js";
@@ -41,6 +41,7 @@ import { ShimmerLine, Reveal, staggerDelay } from "./Lively.js";
 import { FancySelect } from "./FancySelect.js";
 import { getVietnamHolidaysForMonth, getVietnamLunarDateForSolarDate, type VietnamHoliday, type VietnamLunarDate } from "../utils/vietnamHolidays.js";
 import { expandRecurringOccurrences } from "../utils/recurrence.js";
+import { canSeePlan } from "../utils/visibility.js";
 
 interface SchedulesProps {
   currentUser: User;
@@ -226,15 +227,9 @@ export function Schedules({
       if (filterSharedOnly === "shared" && !p.isShared) return false;
       if (filterSharedOnly === "personal" && p.isShared) return false;
 
-      // Limited viewers (Child & Guest) only see shared events + their own
-      if (isLimitedViewer(currentUser.role) && !p.isShared && p.creatorId !== currentUser.id) {
-        return false;
-      }
-
-      // Personal plan protection: only see if created by me or shared with everyone
-      if (!p.isShared && p.creatorId !== currentUser.id && currentUser.role !== UserRole.ADMIN) {
-        return false;
-      }
+      // Personal plan protection: only see if created by me or shared with everyone (Admin sees all)
+      // (server cũng lọc theo đúng luật này — src/utils/visibility.ts)
+      if (!canSeePlan(p, currentUser)) return false;
 
       return true;
     }).sort((a, b) => a.startDate.localeCompare(b.startDate));

@@ -15,6 +15,7 @@ import { sqliteAppendServerMetric, sqliteGetServerMetrics } from "./server/sqlit
 import { UserRole, isLimitedViewer, DishSlot, MealIngredient, DOCUMENT_TYPE_LABELS } from "./src/types.js";
 import { buildPlanFromLibrary, dedupeAndAnnotateGroceries } from "./src/utils/mealPlan.js";
 import { normalizeSearchText, matchesQuery, excerptAround } from "./src/utils/searchText.js";
+import { canSeeTask, canSeePlan, canSeeFinance, Viewer } from "./src/utils/visibility.js";
 import { saveDataUrlToFile, UPLOADS_DIR } from "./server/media.js";
 import { streamFullBackup, fullBackupFilename, importFullBackup } from "./server/fullBackup.js";
 import { telegramBackupStatus, sendBackupToTelegram, runTelegramBackupTick } from "./server/telegramBackup.js";
@@ -292,6 +293,8 @@ const requireRole = (roles: UserRole[]) => {
     next();
   };
 };
+
+const viewerOf = (req: AuthRequest): Viewer => ({ id: req.userSession!.userId, role: req.userSession!.role });
 
 const canViewSavingsGoal = (goal: { isShared: boolean; creatorId: string }, session: AuthRequest["userSession"]) => {
   if (!session) return false;
@@ -900,7 +903,8 @@ app.get("/api/realtime", (req: Request, res: Response) => {
 // --- TASK API ENDPOINTS ---
 
 app.get("/api/tasks", requireAuth, (req: AuthRequest, res: Response) => {
-  const tasks = FamilyDB.getTasks();
+  const viewer = viewerOf(req);
+  const tasks = FamilyDB.getTasks().filter(t => canSeeTask(t, viewer));
   res.json({ tasks });
 });
 
@@ -994,7 +998,8 @@ app.delete("/api/tasks/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.
 // --- PLANS / SCHEDULE API ENDPOINTS ---
 
 app.get("/api/plans", requireAuth, (req: AuthRequest, res: Response) => {
-  const plans = FamilyDB.getPlans();
+  const viewer = viewerOf(req);
+  const plans = FamilyDB.getPlans().filter(p => canSeePlan(p, viewer));
   res.json({ plans });
 });
 
@@ -1146,9 +1151,11 @@ app.get("/api/search", requireAuth, (req: AuthRequest, res: Response) => {
   const take = <T,>(list: T[], map: (x: T) => SearchResultItem) =>
     list.slice(0, SEARCH_LIMIT_PER_KIND).forEach(x => results.push(map(x)));
 
-  // Công việc — title/description/tags (route GET gốc trả tất cả cho mọi role)
+  const viewer = viewerOf(req);
+
+  // Công việc — title/description/tags (cùng luật xem với GET /api/tasks)
   take(
-    FamilyDB.getTasks().filter(t => matchesQuery(q, t.title, t.description, t.tags)),
+    FamilyDB.getTasks().filter(t => canSeeTask(t, viewer) && matchesQuery(q, t.title, t.description, t.tags)),
     t => ({
       kind: "task", id: t.id, title: t.title,
       snippet: excerptAround(t.description, q) || "Công việc",
@@ -1158,7 +1165,7 @@ app.get("/api/search", requireAuth, (req: AuthRequest, res: Response) => {
 
   // Lịch / sự kiện — title/description
   take(
-    FamilyDB.getPlans().filter(p => matchesQuery(q, p.title, p.description)),
+    FamilyDB.getPlans().filter(p => canSeePlan(p, viewer) && matchesQuery(q, p.title, p.description)),
     p => ({
       kind: "plan", id: p.id, title: p.title,
       snippet: excerptAround(p.description, q) || "Sự kiện",
@@ -1916,7 +1923,9 @@ app.post("/api/assistant/chat", requireAuth, async (req: AuthRequest, res: Respo
   try {
     const [{ GoogleGenAI }] = await Promise.all([import("@google/genai")]);
     const ai = new GoogleGenAI({ apiKey });
-    const tasks = FamilyDB.getTasks().slice(-30).map(t => ({
+    // Chỉ đưa vào prompt những gì người hỏi được xem — AI sẽ kể lại cho họ.
+    const viewer = viewerOf(req);
+    const tasks = FamilyDB.getTasks().filter(t => canSeeTask(t, viewer)).slice(-30).map(t => ({
       id: t.id,
       title: t.title,
       status: t.status,
@@ -1925,14 +1934,16 @@ app.post("/api/assistant/chat", requireAuth, async (req: AuthRequest, res: Respo
       assigneeId: t.assigneeId,
       rewardPoints: t.rewardPoints
     }));
-    const plans = FamilyDB.getPlans().slice(-30).map(p => ({
+    const plans = FamilyDB.getPlans().filter(p => canSeePlan(p, viewer)).slice(-30).map(p => ({
       id: p.id,
       title: p.title,
       startDate: p.startDate,
       endDate: p.endDate,
       isShared: p.isShared
     }));
-    const transactions = FamilyDB.getTransactions().slice(-30).map(({ receiptImage, ...tx }) => tx);
+    const transactions = canSeeFinance(viewer.role)
+      ? FamilyDB.getTransactions().slice(-30).map(({ receiptImage, ...tx }) => tx)
+      : [];
     const medications = FamilyDB.getMedications().map(m => ({
       id: m.id,
       name: m.name,
@@ -1954,7 +1965,9 @@ app.post("/api/assistant/chat", requireAuth, async (req: AuthRequest, res: Respo
       `Nguoi hoi: ${req.userSession?.fullName}`,
       `Tasks gan day: ${JSON.stringify(tasks)}`,
       `Lich gan day: ${JSON.stringify(plans)}`,
-      `Giao dich gan day: ${JSON.stringify(transactions)}`,
+      canSeeFinance(viewer.role)
+        ? `Giao dich gan day: ${JSON.stringify(transactions)}`
+        : "Nguoi hoi KHONG co quyen xem thu chi. Neu duoc hoi ve tien/chi tieu/thu nhap, tra loi rang tai khoan nay khong xem duoc thu chi.",
       `Lich thuoc: ${JSON.stringify(medications)}`,
       `Danh sach di cho hien tai: ${JSON.stringify(shoppingItems)}`,
       `Cau hoi: ${message}`

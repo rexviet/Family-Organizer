@@ -30,10 +30,11 @@ import {
   Camera,
   ChevronDown
 } from "lucide-react";
-import { Task, TaskStatus, TaskPriority, User, UserRole, RewardPointEntry, RewardItem, RecurrenceType, isLimitedViewer, isAdultRole } from "../types.js";
+import { Task, TaskStatus, TaskPriority, User, UserRole, RewardPointEntry, RewardItem, RecurrenceType, isAdultRole } from "../types.js";
 import { motion, AnimatePresence } from "motion/react";
 import { Avatar } from "./Avatar.js";
 import { optimizeImageFile } from "../utils/image.js";
+import { canSeeTask } from "../utils/visibility.js";
 import { ShimmerLine, Reveal, IconChip, staggerDelay } from "./Lively.js";
 import { FancySelect } from "./FancySelect.js";
 import { useConfirm } from "./ConfirmDialog.js";
@@ -198,11 +199,8 @@ export function Tasks({
       }
 
       // Limited viewers (Child & Guest) only see shared tasks AND tasks they created or are assigned to
-      if (isLimitedViewer(currentUser.role)) {
-        if (!task.isShared && task.creatorId !== currentUser.id && task.assigneeId !== currentUser.id) {
-          return false;
-        }
-      }
+      // (server cũng lọc theo đúng luật này — src/utils/visibility.ts)
+      if (!canSeeTask(task, currentUser)) return false;
 
       return true;
     });
