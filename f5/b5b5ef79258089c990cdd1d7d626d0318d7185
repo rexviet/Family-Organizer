@@ -1,0 +1,100 @@
+server/agentApply.finance.test.ts
+  s_409924ee63d935::t_db51c2357a1bca 185-186,189
+  s_409924ee63d935::t_150812401e99b2 29-30,51
+  s_409924ee63d935::t_bedb35de1dffb3 164-168,182-184,187-188
+  s_409924ee63d935::t_aa1ee99b8a02a4 1-28,31-50,52-163,169-181,190-207
+server/dataMutations.ts
+  s_409924ee63d935::t_a90574470ac8bf 11-12,22,316-322,324-426,428
+  s_409924ee63d935::t_1ea9f0c8dee6d6 323
+  s_409924ee63d935::t_0c1e310bd8d12e 427
+agent/src/family_agent/harness/prompts.py
+  s_409924ee63d935::t_d8565d4ce064f7 49-51,71-76,91-92
+  s_409924ee63d935::t_3d512e2208d281 46
+src/utils/expenseCategories.ts
+  s_409924ee63d935::t_397fce274f61fd 58-59
+  s_409924ee63d935::t_d5aac8bc40daa6 17
+agent/src/family_agent/harness/tools/records.py
+  s_409924ee63d935::t_2f46f4f5e843df 1,83,85-87,100-101
+agent/src/family_agent/harness/agent.py
+  s_409924ee63d935::t_d8565d4ce064f7 39,130
+agent/src/family_agent/harness/tools/finance.py
+  s_409924ee63d935::t_b0c519216c0878 69-73,76
+  s_409924ee63d935::t_aae2ca3800d575 1-68,74-75,77-253
+server/agentRoutes.ts
+  s_409924ee63d935::t_434c1537cb386c 233
+agent/eval/run_eval.py
+  s_409924ee63d935::t_0888dcc3161eb8 74
+  s_409924ee63d935::t_6afaa5f4bb2a95 329-330
+  s_409924ee63d935::t_425e78dbf4ca43 22-24,331,338-339
+  s_409924ee63d935::t_0d98697acff5aa 201-203,325-326,336-337
+  s_409924ee63d935::t_8f6ebc8e6a6019 1-21,25-72,76-78,82-86,92,94-154,156,167-168,172-173,181-200,204-237,239-283,285-307,309-324,327-328,332-335,340-401
+  s_409924ee63d935::t_b409a97a7d9bb6 79-81,87-91,93,155,157-166,169-171,174-180
+  s_409924ee63d935::t_a324381caf5110 238,284,308
+  s_409924ee63d935::t_116f90d35130d7 73,75
+server/db.ts
+  s_409924ee63d935::t_db51c2357a1bca 1215-1217
+  s_409924ee63d935::t_1ea9f0c8dee6d6 1180-1191,1193,1200-1201,1203,1205-1206,1208,1211-1214,1224-1227
+  s_409924ee63d935::t_d72575a044b093 51,1207,1209-1210
+server/permissions.test.ts
+  s_409924ee63d935::t_eb78033d756bbb 8,132-136
+  s_409924ee63d935::t_238bae0a6059dd 137-138
+server.ts
+  s_409924ee63d935::t_db51c2357a1bca 1965
+  s_409924ee63d935::t_1fa19b782b076d 20,26
+  s_409924ee63d935::t_1445289d54b608 1960
+server/agentRoutes.test.ts
+  s_409924ee63d935::t_434c1537cb386c 326-334
+server/agentPreview.ts
+  s_409924ee63d935::t_1445289d54b608 10,142-143,162-167
+  s_409924ee63d935::t_27442e6a4ba9a9 168-169
+agent/eval/fixtures/app.json
+  s_409924ee63d935::t_5f85af57313df6 1-493
+agent/tests/unit/test_eval_harness.py
+  s_409924ee63d935::t_36ca497652709b 4-34,36-60,62-63,65-68,75-147,152-162,164-208
+  s_409924ee63d935::t_0d98697acff5aa 2-3
+  s_409924ee63d935::t_55ee0f2e2dfaef 1,35,61,74,163
+  s_409924ee63d935::t_a324381caf5110 64
+  s_409924ee63d935::t_626f8bcb28b731 69-73,148-151
+agent/tests/unit/test_finance_tools.py
+  s_409924ee63d935::t_6de3b423cb64fe 1-272
+server/agentApply.ts
+  s_409924ee63d935::t_8544ac3de8f96d 17,20,22-26,39-40,54,59,75,77-78,86,88-91,103,158-177,183-186,245-247,249-252,254-260,275-282,319-329,332,387,395,408,418
+  s_409924ee63d935::t_db51c2357a1bca 178-182,248,253,412-417
+src/utils/builtinExpenseCategories.ts
+  s_409924ee63d935::t_397fce274f61fd 1-34
+agent/src/family_agent/harness/money.py
+  s_409924ee63d935::t_ec87483942003e 1-27,30-70,75-90,95-114,117-118,123-133
+  s_409924ee63d935::t_cab06d8ab66334 28-29,71-74,91-94,115-116,119-122
+server/permissions.ts
+  s_409924ee63d935::t_eb78033d756bbb 23-27
+agent/src/family_agent/harness/vocab.py
+  s_409924ee63d935::t_3ef70372197c8a 27-32
+agent/tests/unit/test_money.py
+  s_409924ee63d935::t_dd3efd455ad273 45-47,64-69
+  s_409924ee63d935::t_81d2ffdc7e34dd 1-44,48-63,70-84
+server/db.batch.test.ts
+  s_409924ee63d935::t_c0bce523cbfade 174-211
+server/agentPreview.test.ts
+  s_409924ee63d935::t_932a8fa1143608 7,89-101
+agent/eval/cases.json
+  s_409924ee63d935::t_c6c474880f4b90 721-728
+  s_409924ee63d935::t_6fcb39190cb617 1-720,729-768
+agent/tests/unit/test_prompts.py
+  s_409924ee63d935::t_9a9e3ac1304fbb 95-117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f5b5b5ef79258089c990cdd1d7d626d0318d7185",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
