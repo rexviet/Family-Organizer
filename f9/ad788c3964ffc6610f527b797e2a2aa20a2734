@@ -1,0 +1,83 @@
+agent/tests/unit/test_task_plan_tools.py
+  s_409924ee63d935::t_1691ec0d82b737 368-369
+  s_409924ee63d935::t_7b70b3273714c8 372-395
+  s_409924ee63d935::t_60452463a20e14 116-117
+  s_409924ee63d935::t_881880c73d588a 1-115,118-367,370-371
+agent/src/family_agent/harness/agent.py
+  s_409924ee63d935::t_fac3458bb42012 39,42,129
+agent/src/family_agent/harness/tools/tasks.py
+  s_409924ee63d935::t_1691ec0d82b737 223-225
+  s_409924ee63d935::t_05356384a5750f 13,62-64,66-73,75-77,81
+  s_409924ee63d935::t_7e7f43c85df237 1-12,14-61,65,74,78-80,82-222
+server/agentRoutes.test.ts
+  s_409924ee63d935::t_742b596e45c571 33-34
+  s_409924ee63d935::t_476cf8fdb24a14 56
+  s_409924ee63d935::t_bcb744a8702dfe 332-339
+agent/src/family_agent/harness/tools/records.py
+  s_409924ee63d935::t_05356384a5750f 91-93,108,111-119
+  s_409924ee63d935::t_d2eedecdd5a86e 1-15,17-90,94-107,109-110,125-145
+  s_409924ee63d935::t_79a732a90a3970 16
+  s_409924ee63d935::t_d55610a31648ba 120-124
+server.ts
+  s_409924ee63d935::t_63f1a81d6c2961 1952-1953,1956-1958,1962
+  s_409924ee63d935::t_9ba096657d7614 15
+  s_409924ee63d935::t_423551bb2a1335 1031,1051
+server/agentApply.test.ts
+  s_409924ee63d935::t_742b596e45c571 21-22,38
+  s_409924ee63d935::t_b8fab027ba00bc 173-174
+agent/src/family_agent/harness/prompts.py
+  s_409924ee63d935::t_fac3458bb42012 46-48,64-68
+server/agentPreview.ts
+  s_409924ee63d935::t_c036dd7d068695 115-128
+server/agentApply.tasks.test.ts
+  s_409924ee63d935::t_127cf23b41de0e 1-35,40-287
+  s_409924ee63d935::t_45d82539d228ea 36-39
+server/agentPreview.test.ts
+  s_409924ee63d935::t_714484e0e690be 60-68
+server/db.ts
+  s_409924ee63d935::t_7d7664a7d84381 328-329,333,336,983,1086-1088,1095
+  s_409924ee63d935::t_50472fd6d64168 48-51,980-982,1076,1084-1085,1092-1094,1096,1101,2694-2702
+server/agentRoutes.ts
+  s_409924ee63d935::t_970115f2b7a88a 233
+agent/eval/phase8_smoke.py
+  s_409924ee63d935::t_698b18c0a204a8 1-48,50-70
+  s_409924ee63d935::t_19bf97d01d0e73 49
+server/dataMutations.ts
+  s_409924ee63d935::t_45d82539d228ea 188-193,195,227,229,231
+  s_409924ee63d935::t_59f701d72541ee 11,19,91-187,194,196-226,228,230,232-314
+server/db.batch.test.ts
+  s_409924ee63d935::t_640b982389bd52 136,144-173
+  s_409924ee63d935::t_2ad81ae18abaf7 137-143
+  s_409924ee63d935::t_b65f53a54590a7 112-135
+agent/tests/unit/test_prompts.py
+  s_409924ee63d935::t_56865dbf241645 67-94
+server/agentApply.ts
+  s_409924ee63d935::t_25a6468d86b869 7-8,22,63,71-86,246,293-296,305-306,310-317,319-322
+  s_409924ee63d935::t_2be84f083f89ef 11,13-21,33-34,40,44,46-48,51-52,58,61-62,64-70,87-132,134-138,140-141,143,150-178,180-191,193-199,205-214,228-244,247-250,257-258,291-292,308,328-333,338,341
+  s_409924ee63d935::t_b8fab027ba00bc 133,139,192,245
+agent/src/family_agent/harness/tools/plans.py
+  s_409924ee63d935::t_0246ad3502d35d 1-78,81-245
+  s_409924ee63d935::t_1691ec0d82b737 246-248
+  s_409924ee63d935::t_05356384a5750f 79-80
+server/permissions.ts
+  s_409924ee63d935::t_6d1c31c8c0e6bb 7-40
+server/permissions.test.ts
+  s_409924ee63d935::t_456af29e496bfd 7-9,90-129
+  s_409924ee63d935::t_0360464035b0ed 130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f9ad788c3964ffc6610f527b797e2a2aa20a2734",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
