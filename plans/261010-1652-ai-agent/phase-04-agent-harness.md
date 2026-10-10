@@ -25,7 +25,8 @@ Agent thật: 9 tool đọc, `ask_user`, 3 tool đề xuất đi chợ, `EndWhen
 - Đề xuất đi chợ: `propose_add_shopping_items`, `propose_set_purchased`, `propose_remove_shopping_items` → validate (id tồn tại trong `list_shopping`, tên không rỗng, gộp trùng tên không dấu) → `outcome.add(op)` với `base.fingerprint` tính bằng `contract.py`.
 - `EndWhenSettled` như PTC; output validator: câu trả lời khẳng định đã làm ("đã thêm|đã xoá|đã tạo|đã cập nhật|đã ghi") mà `outcome` rỗng → `ModelRetry`.
 - Instructions (`prompts.py`): vai trò, ngắn gọn tiếng Việt; ngày + thứ + múi giờ; bảng thành viên (id, tên, quan hệ, role); từ điển hạng mục chi; luật đề xuất; "id phải lấy từ tool đọc".
-- Giới hạn: `CodeMode(max_tool_calls=40, resource_limits=…)` theo spike; `UsageLimits(request_limit=6)`.
+- Giới hạn: `CodeMode(max_tool_calls=40, resource_limits={"max_duration_secs": 15, "max_memory": 134217728})` (bytes; thời lượng tính dồn cho các `run_code` trong một lượt → timeout 90 s của lượt mới là giới hạn thật); `UsageLimits(request_limit=6)`.
+- Với `EndWhenSettled`, `result.output` là `None` → `/run` đọc kết quả từ `deps.outcome`/`deps.clarifications`; `result.usage` là thuộc tính (không gọi hàm).
 - `/run` trả `answer | proposal | clarification` + `history` (`ModelMessagesTypeAdapter`), cắt còn 20 lượt **chỉ tại ranh giới tin nhắn người dùng** (không để `tool_call` mồ côi → 400). History không parse được (sau nâng cấp thư viện) → bỏ history, không làm hỏng lượt.
 
 ## Related Code Files

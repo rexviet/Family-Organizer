@@ -43,6 +43,7 @@
 - [ ] release.yml 2 image, owner động
 - [ ] README + CHANGELOG
 - [ ] Thử trên Pi
+- [ ] Đo RAM agent trên Pi 5 (hoãn từ phase 1): `docker stats` lúc rảnh + 1 lượt thật, đỉnh phải < 300 MiB — xem reports/spike-s1.md
 - [ ] Phát hành M1 (sau khi người dùng đồng ý)
 
 ## Success Criteria

@@ -1,6 +1,6 @@
 # Phase 1 — Spike: Monty arm64, RAM, model
 
-**Priority:** P1 (chặn mọi phase sau) · **Effort:** 4h · **Status:** Pending
+**Priority:** P1 (chặn mọi phase sau) · **Effort:** 4h · **Status:** Done — **GO** (2026-10-10). YC 1, 3 (a–c), 4 đạt (4 model ≥ 7/10, tốt nhất `kr/deepseek-3.2` 10/10, không cần `compat.py`); YC 2 đạt trên Mac arm64 (đỉnh 101–123 MiB), đo trên Pi hoãn sang phase 7; YC 3d (Ollama) hoãn — không chặn. Xem [reports/spike-s1.md](./reports/spike-s1.md)
 
 ## Context Links
 - Spec §3.2 (S1), §5, §14 — [docs/ai-agent-spec.md](../../docs/ai-agent-spec.md)
@@ -22,10 +22,12 @@ Trả lời 4 câu trước khi viết code thật. Kết quả là `reports/spi
 4. Ghi `reports/spike-s1.md`: phiên bản đã pin, kết quả, model đề xuất ghi vào README, có cần `compat.py` không.
 
 ## Todo
-- [ ] Monty import + chạy trên arm64
-- [ ] Số đo RAM rảnh / đỉnh
-- [ ] Bảng 10 câu × ≥ 2 model
-- [ ] Quyết định go/no-go + version pin
+- [x] Monty import + chạy trên arm64 (container `linux/arm64` trên Mac; Pi thật kiểm ở phase 7)
+- [x] Số đo RAM rảnh / đỉnh — Mac arm64: rảnh 74–84 MiB, đỉnh 101–123 MiB dưới cgroup 300 MiB
+- [ ] Số đo RAM trên Pi 5 — **hoãn sang phase 7** (không truy cập được Pi từ máy làm spike)
+- [ ] Ollama tool calling (YC 3d) — **hoãn** (máy không có Ollama); thay bằng 2 model open-weight qua endpoint OpenAI-compatible, đều chạy `run_code` đúng
+- [x] Bảng 10 câu × ≥ 2 model (5 model, 4 đạt ≥ 7/10)
+- [x] Quyết định go/no-go + version pin — **GO**; pin slim 2.33.0 / harness 0.25.0 / monty 0.0.21
 
 ## Success Criteria
 Go khi: Monty chạy trên arm64, RAM đỉnh < 300 MiB, ít nhất 1 model ≥ 7/10 và không cần sửa request. No-go → cập nhật spec, báo người dùng.

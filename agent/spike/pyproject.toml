@@ -1,0 +1,11 @@
+[project]
+name = "agent-spike"
+version = "0.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "pydantic-ai-slim[openai]==2.33.0",
+  "pydantic-ai-harness[codemode]==0.25.0",
+  # harness 0.25.0 declares pydantic-monty>=0.0.19 (no ceiling); 1.1.0 renamed ResourceLimits keys -> breaks. Pin.
+  "pydantic-monty==0.0.21",
+  "httpx",
+]

@@ -24,7 +24,9 @@ Dịch vụ HTTP nhỏ, chưa có tool thật: cấu hình, xác thực nội b�
 ## Architecture
 ```
 agent/
-├── pyproject.toml          # uv; pin như PTC (cận trên mọi dependency)
+├── pyproject.toml          # uv; pin CHÍNH XÁC theo spike: pydantic-ai-slim[openai]==2.33.0,
+│                           #   pydantic-ai-harness[codemode]==0.25.0, pydantic-monty==0.0.21
+│                           #   (monty 1.1.0 đổi tên key resource_limits → mọi run_code lỗi)
 ├── uv.lock
 ├── Dockerfile              # python:3.12-slim, uv sync --frozen --no-dev, USER app
 ├── src/family_agent/

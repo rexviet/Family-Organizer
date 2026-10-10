@@ -1,7 +1,7 @@
 ---
 title: "Trợ lý AI Agent (Pydantic AI + CodeMode)"
 description: "Thay /api/assistant/chat bằng agent chạy container riêng, đọc/ghi Đi chợ, Việc, Lịch, Thu chi qua API có sẵn; agent chỉ đề xuất, người dùng Duyệt thì Node mới ghi."
-status: pending
+status: in-progress
 priority: P2
 effort: 68h
 branch: main
@@ -28,7 +28,7 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Spike: Monty arm64, RAM, model](./phase-01-spike.md) | Pending |
+| 1 | [Spike: Monty arm64, RAM, model](./phase-01-spike.md) | Done — GO (RAM Pi đo ở phase 7) |
 | 2 | [Hợp đồng operation + planHash](./phase-02-contracts.md) | Pending |
 | 3 | [Agent service (Python) khung](./phase-03-agent-service.md) | Pending |
 | 4 | [Agent harness: tool đọc, hỏi lại, đề xuất đi chợ](./phase-04-agent-harness.md) | Pending |
