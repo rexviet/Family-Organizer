@@ -1,0 +1,63 @@
+server/agentRoutes.test.ts
+  s_409924ee63d935::t_47122a74669dd2 15,365-376
+  s_409924ee63d935::t_fdb3d2bc3a8a0c 377
+src/utils/assistantAgent.ts
+  s_409924ee63d935::t_b7050a5e76e5bc 1-72,75-81,83,89,93-140
+  s_409924ee63d935::t_8df2614b4ba948 73,90
+  s_409924ee63d935::t_823d5aa4f1deec 74,82,84-88,91-92
+src/i18n/locales/vi.json
+  s_409924ee63d935::t_feda8fefcbf220 1171-1172
+  s_409924ee63d935::t_180563d0056255 1144-1170,1173-1185
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_c24b1805e99a7c 36
+src/components/assistant/AgentSettings.tsx
+  s_409924ee63d935::t_dac518ceb71df1 1-89,91-93,95,97-153
+  s_409924ee63d935::t_feda8fefcbf220 90,94,96
+src/components/assistant/ClarificationChips.tsx
+  s_409924ee63d935::t_88054b4676bf3e 1-35
+src/utils/assistantAgent.test.ts
+  s_409924ee63d935::t_8df2614b4ba948 36-38
+  s_409924ee63d935::t_fb786c62cc988e 41-42,44-52
+  s_409924ee63d935::t_7d1c2df44a341c 1-35,39-40,43,53-140
+src/components/assistant/ProposalCard.tsx
+  s_409924ee63d935::t_053effe37d1804 74-75,80
+  s_409924ee63d935::t_6646ba363ba444 1-56,58-73,76-79,81-140,142-150
+  s_409924ee63d935::t_02930d5a2eda95 57,141
+server/agentStore.ts
+  s_409924ee63d935::t_000737170aa53d 68-70,207
+server/agentRoutes.ts
+  s_409924ee63d935::t_000737170aa53d 13,68-69
+src/components/Assistant.tsx
+  s_409924ee63d935::t_02930d5a2eda95 72,76-80,121,124,129,139,141-142,146-148,158-160,187-190,202,229,233-235,279,289-290,308,412
+  s_409924ee63d935::t_b0ca5b9d2655a4 405
+  s_409924ee63d935::t_e3e239c9cd7e46 7,12-22,44-45,49-53,61-71,73-75,104-120,122-123,125-128,130-138,140,143-145,149-157,161-186,191-197,208-209,285-288,291-307,309-314,371,388-404,406-409,420-436,438-439,495-497
+  s_409924ee63d935::t_72f671d2ded9de 200,437,505,517
+src/i18n/locales/en.json
+  s_409924ee63d935::t_feda8fefcbf220 1171-1172
+  s_409924ee63d935::t_180563d0056255 1144-1170,1173-1185
+src/components/Settings.tsx
+  s_409924ee63d935::t_feda8fefcbf220 44,1916-1918
+  s_409924ee63d935::t_ea0838852d97fd 1919-1920
+plans/261010-1652-ai-agent/phase-06-ui.md
+  s_409924ee63d935::t_c24b1805e99a7c 3,34-58
+  s_409924ee63d935::t_d978b780703feb 59-67
+src/i18n/locales/zh.json
+  s_409924ee63d935::t_180563d0056255 1144-1170,1173-1185
+  s_409924ee63d935::t_feda8fefcbf220 1171-1172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "489ca98559fb684965ad57831177fabd3a20f6b5",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
