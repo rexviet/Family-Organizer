@@ -1,0 +1,71 @@
+docs/ai-agent-spec.md
+  s_409924ee63d935::t_e9ca3cff3fb62c 48
+server/db.ts
+  s_409924ee63d935::t_59a7972c565894 48-50
+  s_409924ee63d935::t_cc4eb78aa8fd1c 334-350,976,1141,1294,2201,2206-2209,2224
+server/agentToken.test.ts
+  s_409924ee63d935::t_a1a9bb2b944a8e 96-103
+  s_409924ee63d935::t_f5c4208a0b2147 1-95
+server/agentStore.ts
+  s_409924ee63d935::t_8b306698c3ecca 1-224
+server/agentApply.test.ts
+  s_409924ee63d935::t_fde27be1e161c8 1-184
+  s_409924ee63d935::t_7ac3c439ca504e 185-195
+server/agentApply.ts
+  s_409924ee63d935::t_758a760a05fcd9 143-151
+  s_409924ee63d935::t_89df4d22ff6300 1-142,152
+server/dataMutations.ts
+  s_409924ee63d935::t_59a7972c565894 1-14,16-89
+  s_409924ee63d935::t_758a760a05fcd9 15
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_951fbca7e2f7b3 35
+server/agentPreview.ts
+  s_409924ee63d935::t_e4e0c7bb1c2a9c 1-151
+server/agentPreview.test.ts
+  s_409924ee63d935::t_07ce87291df291 1-88
+server/agentRoutes.test.ts
+  s_409924ee63d935::t_789aaeecc1a944 359-364
+  s_409924ee63d935::t_a3d97e2af10d93 312-321,357-358
+  s_409924ee63d935::t_7ac3c439ca504e 36,58,77,322-356
+  s_409924ee63d935::t_2428c05a03d9d5 1-35,37-57,59-76,78-311
+server/agentStore.test.ts
+  s_409924ee63d935::t_dae65643da9b99 1-128
+server/agentToken.ts
+  s_409924ee63d935::t_60905527b2fbd5 1-94
+server/agentClient.test.ts
+  s_409924ee63d935::t_638e82bfc6ca83 1-111
+server/agentRoutes.ts
+  s_409924ee63d935::t_789aaeecc1a944 268-271
+  s_409924ee63d935::t_c80b3341a4ffd3 71-83,138,257,260,265,267,273,276,292,294,306,323,325,327,335
+  s_409924ee63d935::t_788d1b91f97953 1-14,16-32,35-70,84-137,139-151,153-206,214-218,223-225,227-229,234-256,258-259,261-263,266,272,274-275,277,282,284-287,289-291,293,295-305,307-322,324,326,328-334,336-338
+  s_409924ee63d935::t_758a760a05fcd9 15,33-34,219-222,226,230-233,278-281
+  s_409924ee63d935::t_a9f11d0b5a0863 207-213
+  s_409924ee63d935::t_a282a3cf91fdf5 152,264,283,288
+server.ts
+  s_409924ee63d935::t_1fb71d88241f49 16-19,149-151,229-240,1930-1965,2386,2405,2407-2408,2946-2950
+server/agentClient.ts
+  s_409924ee63d935::t_9bd855752cab00 1-143
+server/db.batch.test.ts
+  s_409924ee63d935::t_e458074cfdd63b 1-36,38-111
+  s_409924ee63d935::t_7ac3c439ca504e 37
+plans/261010-1652-ai-agent/phase-05-node-integration.md
+  s_409924ee63d935::t_951fbca7e2f7b3 3,62-91
+  s_409924ee63d935::t_89edc3a7e214c5 93-100
+  s_409924ee63d935::t_7e7895ac1e8166 92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "15f75e67564a6dd1e70979dd60888254141720a8",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
