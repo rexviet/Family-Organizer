@@ -1,0 +1,57 @@
+plans/261010-1652-ai-agent/phase-04-agent-harness.md
+  s_a61be62a9154b3::t_fb7db0ce9f6a31 28-29
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_cbbd49d2126562 4,31
+plans/261010-1652-ai-agent/phase-07-deploy.md
+  s_409924ee63d935::t_cbbd49d2126562 46
+plans/261010-1652-ai-agent/reports/spike-s1.md
+  s_a61be62a9154b3::t_44c0fd01400710 60-87
+  s_a61be62a9154b3::t_55558a58d868f2 2,5-59
+  s_409924ee63d935::t_e5a38c9e76e430 1,3-4,88-136
+plans/261010-1652-ai-agent/phase-03-agent-service.md
+  s_a61be62a9154b3::t_fb7db0ce9f6a31 27-29
+agent/spike/checks.py
+  s_a61be62a9154b3::t_e8bfb912b82cb5 1-173
+plans/261010-1652-ai-agent/phase-01-spike.md
+  s_409924ee63d935::t_cbbd49d2126562 3,25-30
+agent/spike/.dockerignore
+  s_a61be62a9154b3::t_1cd4bb47ea5d9e 1-2
+agent/spike/.gitignore
+  s_a61be62a9154b3::t_55558a58d868f2 1-2
+agent/spike/pyproject.toml
+  s_a61be62a9154b3::t_1cd4bb47ea5d9e 1-5,11
+  s_a61be62a9154b3::t_e320fb2f8393be 6-10
+agent/spike/ram.py
+  s_a61be62a9154b3::t_fce8b73244e165 1-47
+agent/spike/eval_quality.py
+  s_a61be62a9154b3::t_5cbcc51ea3cf04 125
+  s_a61be62a9154b3::t_5642e0e1d2c9fb 1-124,126-169
+agent/spike/Dockerfile
+  s_a61be62a9154b3::t_1cd4bb47ea5d9e 1-8
+agent/spike/uv.lock
+  s_a61be62a9154b3::t_bd2da54830509d 1-607
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "16f365380e8c5ad8966811102f219e3a489329c3",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    },
+    "s_a61be62a9154b3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd31c43f-8126-4ba5-b344-0d652abf5e2e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
