@@ -1,0 +1,32 @@
+plans/261010-1652-ai-agent/reports/phase-09-eval.md
+  s_409924ee63d935::t_e48501252680d2 3,5-8,10-65,101
+plans/261010-1652-ai-agent/phase-08-task-plan-writes.md
+  s_409924ee63d935::t_f8ee6c12bf1f58 36
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_f8ee6c12bf1f58 38-39,42-43
+plans/261010-1652-ai-agent/reports/phase-08-real-model.md
+  s_409924ee63d935::t_627aac6fa11539 3
+  s_409924ee63d935::t_e1b431578ce028 4,13-44
+plans/261010-1652-ai-agent/reports/eval-kr-deepseek-3.2-2026-10-10.md
+  s_409924ee63d935::t_f989f956c6222b 1-137
+plans/261010-1652-ai-agent/reports/eval-kr-claude-haiku-4.5-2026-10-10.md
+  s_409924ee63d935::t_f989f956c6222b 1-137
+plans/261010-1652-ai-agent/phase-09-finance-writes-eval.md
+  s_409924ee63d935::t_f8ee6c12bf1f58 43-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a6b87075c0276b95714ef8a6dc7be7b2b1aaa741",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
