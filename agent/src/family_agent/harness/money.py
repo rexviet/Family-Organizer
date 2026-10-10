@@ -7,6 +7,7 @@ Làm bằng CODE (không để model tự nhân/chia): sai số tiền là rủi
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Final
 
@@ -131,3 +132,122 @@ def parse_vnd(value: str | int | float) -> int:
     if not 1 <= amount <= MAX_AMOUNT:
         raise ToolError(f'Số tiền "{text}" phải từ 1 đ đến 1.000 tỷ đ.')
     return int(amount)
+
+
+# ---------------------------------------------------------------------------
+# Số tiền phải đến từ lời người dùng (eval phase 9: model tự thêm đơn vị cho "đi chợ hết 150", "ghi chi 1,5")
+# ---------------------------------------------------------------------------
+
+# Số trong lời người dùng (đã fold): số + đơn vị (+ "đ") + đuôi ("1tr2", "2 trieu ruoi", "50kd") hoặc số trần
+# ("150", "1,5", "1.250.000", "2 000 000"). Đuôi chỉ được có SAU đơn vị: "tháng 9 150" là hai số riêng.
+_SPOKEN: Final = re.compile(
+    r"(?<![\w.,/:])(?P<num>[0-9]{1,3}(?: [0-9]{3})* 000(?![0-9.,])|[0-9]+(?:[.,][0-9]+)*)"
+    r"(?:(?P<unit>\s*(?:trieu|nghin|ngan|lit|tr|cu|ty|ti|k))(?:\s*(?:vnd|dong|d))?(?![a-z])"
+    r"(?P<tail>\s*[0-9]+(?![0-9.,]))?(?:\s*ruoi)?)?"
+)
+# Số trần đứng cạnh từ chỉ ngày/giờ/số lượng không phải số tiền ("tháng 9", "ngày 2", "7h", "2 lần").
+_NOT_MONEY_BEFORE: Final = re.compile(r"\b(?:thang|ngay|thu|luc|tuan|nam|so|lop)$")
+_NOT_MONEY_AFTER: Final = re.compile(
+    r"(?:[/:]|\s*(?:h|g|gio|phut|tuoi|ngay|thang|nam|lan|nguoi|cai|qua|kg|hop|chai|bat|ly|coc)\b)"
+)
+# Đơn vị đứng một mình (trả lời câu hỏi lại: "nghìn") — không gồm "k" ("không"), "tr", "ngan" ("ngăn"), "ty" ("tí").
+_LONE_UNIT: Final = re.compile(r"\b(trieu|nghin)\b")
+# Có từ chỉ số tiền viết bằng chữ ("hai trăm k", "trăm rưỡi") → không coi là model bịa số.
+_SPELLED: Final = re.compile(r"\b(?:tram|chuc|muoi|nghin|ngan|trieu|ty|ti|cu|lit|k|ruoi|nua)\b")
+_UNITLESS: Final = re.compile(r"^[0-9]+(?:[.,][0-9]{1,2})?$")
+_SCALES: Final = (10**3, 10**6)
+
+
+def _vnd(n: Decimal) -> str:
+    return f"{int(n):,}đ".replace(",", ".")
+
+
+def _unit_options(b: Decimal) -> list[str]:
+    return [_vnd(b * u) for u in _SCALES if b * u == (b * u).to_integral_value() and b * u >= MIN_BARE]
+
+
+def _ask_unit(text: str, b: Decimal) -> tuple[str, list[str]]:
+    return f'Số tiền "{text}" chưa có đơn vị — ý bạn là bao nhiêu?', _unit_options(b)
+
+
+@dataclass
+class _Said:
+    """Số tiền trong MỘT tin nhắn người dùng."""
+
+    stated: set[int] = field(default_factory=set)  # số tiền đã rõ ("250k", "1.250.000")
+    bare: dict[str, Decimal] = field(default_factory=dict)  # số trần nhập nhằng {chữ gốc: giá trị} ("150", "1,5")
+    units: set[int] = field(default_factory=set)  # đơn vị nói riêng ("nghìn")
+    spelled: bool = False
+
+
+def _scan(raw: str) -> _Said:
+    out = _Said()
+    text = fold(raw)
+    for m in _SPOKEN.finditer(text):
+        num = m["num"]
+        if m["unit"]:
+            for candidate in (m.group(0), num + m["unit"]):  # đuôi có thể là số khác ("50k 3 lần")
+                try:
+                    out.stated.add(parse_vnd(candidate))
+                    break
+                except ToolError:
+                    continue
+            continue
+        if _NOT_MONEY_BEFORE.search(text[: m.start()].rstrip()) or _NOT_MONEY_AFTER.match(text, m.end()):
+            continue
+        plain = num.replace(" ", "")
+        if plain.isdigit() or _GROUPED.match(plain):
+            n = Decimal(plain.replace(".", "").replace(",", ""))
+            if n >= MIN_BARE:
+                out.stated.add(int(n))
+            else:
+                out.bare[num] = n
+        elif _UNITLESS.match(num):
+            out.bare[num] = Decimal(num.replace(",", "."))
+    for m in _LONE_UNIT.finditer(text):
+        if not text[: m.start()].rstrip()[-1:].isdigit():
+            out.units.add(_UNITS[m[1]])
+    out.spelled = bool(_SPELLED.search(text))
+    return out
+
+
+def amount_question(value: int, texts: list[str]) -> tuple[str, list[str]] | None:
+    """Câu hỏi lại khi số tiền model đề xuất KHÔNG đến từ lời người dùng; None = cho qua.
+
+    `texts`: tin nhắn người dùng theo thứ tự (history → tin hiện tại).
+    - Người dùng nói số không đơn vị ("150", "1,5") mà model tự gắn nghìn/triệu → hỏi lại kèm lựa chọn, trừ khi
+      chính tin đó hoặc tin SAU nói rõ ("150 nghìn", chỉ "nghìn", bấm "150.000đ"); tin cũ hơn không tính.
+    - Người dùng không nói số/đơn vị/số viết bằng chữ nào (ngày, tháng, giờ không tính) mà model vẫn có số tiền →
+      hỏi số tiền.
+    Không có lời người dùng (gọi tool trực tiếp) → không kiểm. Số model tự tính ("2 bát phở 60k") cho qua.
+    """
+    if not texts:
+        return None
+    said = [_scan(t) for t in texts]
+    for i, s in enumerate(said):
+        for text, b in s.bare.items():
+            if not any(b * u == value for u in _SCALES):
+                continue
+            later = said[i:]
+            if any(value in x.stated or any(b * u == value for u in x.units) for x in later):
+                continue
+            return _ask_unit(text, b)
+    if any(x.stated or x.bare or x.units or x.spelled for x in said):
+        return None
+    return "Số tiền là bao nhiêu?", []
+
+
+def unitless_question(raw: object) -> tuple[str, list[str]] | None:
+    """Model truyền nguyên văn số không đơn vị ("150", "1,5") → câu hỏi lại kèm lựa chọn; số hợp lệ/khác → None."""
+    if isinstance(raw, bool) or not isinstance(raw, int | float | str):
+        return None
+    text = str(raw).strip()
+    try:
+        parse_vnd(raw)
+        return None
+    except ToolError:
+        pass
+    if not _UNITLESS.match(text):
+        return None
+    b = Decimal(text.replace(",", "."))
+    return _ask_unit(text, b) if b > 0 else None

@@ -152,7 +152,6 @@ async def test_khoan_thu_thieu_nguon_thi_hoi(deps: AppDeps) -> None:
 
 @pytest.mark.parametrize("kw", [
     {"tx_type": "chi", "amount": "1k", "category": "food"},
-    {"tx_type": "expense", "amount": "1,5", "category": "food"},
     {"tx_type": "expense", "amount": 0, "category": "food"},
     {"tx_type": "expense", "amount": "1k", "category": "food", "date": "10/10/2026"},
     {"tx_type": "expense", "amount": "1k", "category": "food", "date": "2026-02-30"},
@@ -166,6 +165,54 @@ async def test_tao_tham_so_sai(deps: AppDeps, kw: dict[str, Any]) -> None:
         with pytest.raises(ToolError):
             await finance.propose_create_transaction(ctx(deps), **kw)
     assert deps.outcome.is_empty()
+
+
+# --- số tiền không đơn vị / model tự gắn đơn vị → hỏi lại kèm lựa chọn (eval phase 9 A08, A09) ----------------------
+
+@pytest.mark.parametrize(("said", "amount", "options"), [
+    ("Hôm nay đi chợ hết 150", "150k", ["150.000đ", "150.000.000đ"]),  # model tự thêm "k"
+    ("Hôm nay đi chợ hết 150", 150000, ["150.000đ", "150.000.000đ"]),
+    ("Ghi chi 1,5 tiền chợ hôm nay", "1,5 triệu", ["1.500đ", "1.500.000đ"]),
+    ("Ghi chi 1,5 tiền chợ hôm nay", "1,5", ["1.500đ", "1.500.000đ"]),  # model truyền nguyên văn
+    ("", "150", ["150.000đ", "150.000.000đ"]),  # không có lời người dùng: số trần vẫn hỏi lại
+])
+async def test_so_tien_khong_don_vi_thi_hoi_lai(deps: AppDeps, said: str, amount: Any, options: list[str]) -> None:
+    deps.user_texts = [said] if said else []
+    with respx.mock:
+        serve()
+        msg = await finance.propose_create_transaction(ctx(deps), tx_type="expense", amount=amount, category="food")
+    assert msg == STOP_MESSAGE
+    assert deps.outcome.is_empty()
+    asked = deps.clarifications.first()
+    assert asked is not None and "đơn vị" in asked.question and list(asked.options) == options
+
+
+async def test_so_tien_bia_thi_hoi_so_tien(deps: AppDeps) -> None:
+    deps.user_texts = ["Ghi một khoản chi tiền nhà"]
+    with respx.mock:
+        serve()
+        msg = await finance.propose_create_transaction(ctx(deps), tx_type="expense", amount="5tr", category="other")
+    assert msg == STOP_MESSAGE and deps.outcome.is_empty()
+    asked = deps.clarifications.first()
+    assert asked is not None and "bao nhiêu" in asked.question
+
+
+async def test_so_tien_nguoi_dung_noi_ro_thi_de_xuat(deps: AppDeps) -> None:
+    deps.user_texts = ["Hôm nay đi chợ hết 150", "150 nghìn"]
+    with respx.mock:
+        serve()
+        await finance.propose_create_transaction(ctx(deps), tx_type="expense", amount="150 nghìn", category="food")
+    assert ops(deps)[0]["amount"] == 150000
+
+
+async def test_sua_so_tien_khong_don_vi_thi_hoi_lai(deps: AppDeps) -> None:
+    deps.user_texts = ["Sửa tiền điện tháng 9 thành 900"]
+    with respx.mock:
+        serve()
+        msg = await finance.propose_update_transaction(ctx(deps), transaction="x2", amount="900k")
+    assert msg == STOP_MESSAGE and deps.outcome.is_empty()
+    asked = deps.clarifications.first()
+    assert asked is not None and list(asked.options) == ["900.000đ", "900.000.000đ"]
 
 
 @pytest.mark.parametrize("role", ["child", "guest"])

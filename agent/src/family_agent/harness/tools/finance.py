@@ -18,7 +18,7 @@ from pydantic_ai.toolsets import FunctionToolset
 
 from family_agent.contract import fingerprint
 from family_agent.harness.deps import AppApiError, AppDeps, ToolError, flag_failures
-from family_agent.harness.money import parse_vnd
+from family_agent.harness.money import amount_question, parse_vnd, unitless_question
 from family_agent.harness.tools.ask import STOP_MESSAGE
 from family_agent.harness.tools.read import fetch_rows
 from family_agent.harness.tools.records import PENDING, clean_text, parse_day, resolve, short, stage
@@ -40,22 +40,54 @@ def money(amount: object) -> str:
     return f"{n:,}₫".replace(",", ".")
 
 
+def _amount(deps: AppDeps, raw: str | int) -> int | None:
+    """Số tiền đồng. Số không đơn vị ("150", "1,5"), hoặc model tự gắn đơn vị / tự bịa số người dùng không nói →
+    hỏi lại kèm lựa chọn, trả None (eval phase 9: model đoán "150" thành 150.000)."""
+    try:
+        value = parse_vnd(raw)
+    except ToolError:
+        asked = unitless_question(raw)
+        if asked is None:
+            raise
+        deps.clarifications.ask(*asked)
+        return None
+    asked = amount_question(value, deps.user_texts)
+    if asked is not None:
+        deps.clarifications.ask(*asked)
+        return None
+    return value
+
+
 def _guard_role(deps: AppDeps) -> None:
     if deps.user.role not in ("admin", "member"):
         raise ToolError("Chỉ Admin/Thành viên được ghi hoặc sửa thu chi.")
 
 
-async def _expense_categories(deps: AppDeps) -> list[tuple[str, str]]:
-    """(id, nhãn) các hạng mục chi đang dùng: mặc định chưa ẩn + hạng mục gia đình tự thêm."""
+async def _categories_data(deps: AppDeps) -> dict[str, Any]:
     data = await deps.get_json("/api/finance/categories")
     if not isinstance(data, dict):
         raise AppApiError("Dữ liệu từ ứng dụng không đúng định dạng.")
+    return data
+
+
+def _custom(data: dict[str, Any]) -> list[tuple[str, str]]:
+    return [
+        (c["id"], c["label"]) for c in data.get("customCategories") or []
+        if isinstance(c, dict) and isinstance(c.get("id"), str) and c["id"] and isinstance(c.get("label"), str)
+    ]
+
+
+async def load_custom_categories(deps: AppDeps) -> list[tuple[str, str]]:
+    """(id, nhãn) hạng mục chi gia đình tự thêm — đưa vào instructions đầu lượt (eval phase 9 F05: model không gọi
+    list_expense_categories nên không bao giờ chọn "Thú cưng")."""
+    return _custom(await _categories_data(deps))
+
+
+async def _expense_categories(deps: AppDeps) -> list[tuple[str, str]]:
+    """(id, nhãn) các hạng mục chi đang dùng: mặc định chưa ẩn + hạng mục gia đình tự thêm."""
+    data = await _categories_data(deps)
     hidden = {h for h in data.get("hiddenBuiltinCategories") or [] if isinstance(h, str)}
-    out = [(cid, label) for cid, label in BUILTIN_CATEGORIES.items() if cid not in hidden]
-    for c in data.get("customCategories") or []:
-        if isinstance(c, dict) and isinstance(c.get("id"), str) and c["id"] and isinstance(c.get("label"), str):
-            out.append((c["id"], c["label"]))
-    return out
+    return [(cid, label) for cid, label in BUILTIN_CATEGORIES.items() if cid not in hidden] + _custom(data)
 
 
 async def _expense_category(deps: AppDeps, value: str | None) -> tuple[str, str] | None:
@@ -142,7 +174,9 @@ async def propose_create_transaction(
         _guard_role(deps)
         if tx_type not in _TX_TYPES:
             raise ToolError('tx_type phải là "expense" (chi) hoặc "income" (thu).')
-        value = parse_vnd(amount)
+        value = _amount(deps, amount)
+        if value is None:
+            return STOP_MESSAGE
         day = parse_day(date, "date").isoformat() if date is not None else deps.today
         acct = _account(account) if account is not None else None
         desc = clean_text(description, MAX_TX_DESCRIPTION, "Nội dung")
@@ -199,7 +233,10 @@ async def propose_update_transaction(
         name = str(found.get("description", ""))
         wanted: dict[str, Any] = {}
         if amount is not None:
-            wanted["amount"] = parse_vnd(amount)
+            value = _amount(deps, amount)
+            if value is None:
+                return STOP_MESSAGE
+            wanted["amount"] = value
         if date is not None:
             wanted["date"] = parse_day(date, "date").isoformat()
         if description is not None:

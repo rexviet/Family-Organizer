@@ -54,6 +54,10 @@ SHOP = {"shoppingItems": [
 ]}
 
 
+CATS = {"customCategories": [{"id": "cc_pet", "label": "Thú cưng", "emoji": "x", "color": "teal"}],
+        "hiddenBuiltinCategories": []}
+
+
 def inp(
     message: str = "Hôm nay nhà mình có việc gì?", history: list[dict[str, Any]] | None = None, **kw: Any
 ) -> TurnInput:
@@ -94,6 +98,7 @@ def mock_app(shop: Any = SHOP, users: Any = USERS) -> respx.MockRouter:
     router.get(f"{BASE}/api/shopping").respond(json=shop)
     router.get(f"{BASE}/api/tasks").respond(json={"tasks": []})
     router.get(f"{BASE}/api/finance").respond(403, json={"error": "Forbidden"})
+    router.get(f"{BASE}/api/finance/categories").respond(json=CATS)
     return router
 
 
@@ -155,11 +160,57 @@ async def test_thanh_vien_lay_1_lan_dau_luot_va_vao_instructions() -> None:
     assert "u_na" in first and "Bé Na" in first and "2026-10-10" in first
 
 
+async def test_hang_muc_tu_them_lay_1_lan_dau_luot_va_vao_instructions() -> None:
+    s = Script(text("ok"))
+    with mock_app() as router:
+        await go(s)
+        cat_calls = [c for c in router.calls if c.request.url.path == "/api/finance/categories"]
+    assert len(cat_calls) == 1
+    first = s.instructions[0] or ""
+    assert "cc_pet = Thú cưng" in first
+
+
+async def test_con_khong_lay_hang_muc_thu_chi() -> None:
+    s = Script(text("ok"))
+    with mock_app() as router:
+        await go(s, inp(user=UserInfo("u_na", "Bé Na", "child")))
+        paths = {c.request.url.path for c in router.calls}
+    assert "/api/finance/categories" not in paths
+
+
+async def test_khong_lay_duoc_hang_muc_van_chay_tiep() -> None:
+    s = Script(text("Xin chào"))
+    with mock_app() as router:
+        router.get(f"{BASE}/api/finance/categories").respond(500, json={})
+        r = await go(s)
+    assert (r.kind, r.reply) == ("answer", "Xin chào")
+
+
+async def test_so_tien_khong_don_vi_trong_loi_nguoi_dung_thi_hoi_lai() -> None:
+    # eval phase 9 A09: "đi chợ hết 150" → model tự đổi thành "150k" → tool hỏi lại kèm lựa chọn
+    s = Script(code("await propose_create_transaction(tx_type='expense', amount='150k', category='food')"))
+    with mock_app():
+        r = await go(s, inp("Hôm nay đi chợ hết 150"))
+    assert r.kind == "clarification" and r.operations is None
+    assert r.options == ["150.000đ", "150.000.000đ"]
+
+
+async def test_so_tien_tra_loi_o_tin_sau_dung_history() -> None:
+    first = Script(code("await propose_create_transaction(tx_type='expense', amount='150k', category='food')"))
+    with mock_app():
+        r1 = await go(first, inp("Hôm nay đi chợ hết 150"))
+    second = Script(code("await propose_create_transaction(tx_type='expense', amount='150k', category='food')"))
+    with mock_app():
+        r2 = await go(second, inp("nghìn", history=r1.history))
+    assert r2.kind == "proposal" and r2.operations is not None and r2.operations[0]["amount"] == 150000
+
+
 @pytest.mark.parametrize("status", [401, 403, 500])
 async def test_khong_lay_duoc_thanh_vien_van_chay_tiep(status: int) -> None:
     s = Script(text("Xin chào"))
     with respx.mock(assert_all_called=False) as r2:
         r2.get(f"{BASE}/api/users").respond(status, json={})
+        r2.get(f"{BASE}/api/finance/categories").respond(status, json={})
         r = await go(s)
     assert r.kind == "answer"
     assert "không lấy được danh sách thành viên" in (s.instructions[0] or "").lower()
@@ -202,7 +253,7 @@ async def test_403_thu_chi_model_thay_loi_tieng_viet_va_luot_khong_hong() -> Non
     "Đã cập nhật lịch", "Mình đã ghi khoản chi",
 ])
 async def test_noi_da_lam_ma_khong_co_de_xuat_bi_ModelRetry(claim: str) -> None:
-    s = Script(text(claim), text("Mình chưa thay đổi gì cả; bạn muốn mình đề xuất không?"))
+    s = Script(text(claim), text("Mình chưa thay đổi gì cả."))
     with mock_app():
         r = await go(s)
     assert len(s.seen) == 2  # bị gửi lại một lần
@@ -576,3 +627,39 @@ async def test_loi_phia_provider_van_nem_ra_de_app_tra_502(error: Exception) -> 
 
     with mock_app(), pytest.raises(UnexpectedModelBehavior):
         await go(Script(boom))
+
+
+# --- hỏi lại bằng chữ → nhắc dùng ask_user (eval phase 9: model hỏi trong câu trả lời, không có nút chọn) -----------
+
+def _retry_texts(msgs: list[ModelMessage]) -> list[str]:
+    from pydantic_ai.messages import RetryPromptPart
+
+    return [str(p.content) for m in msgs if isinstance(m, ModelRequest) for p in m.parts
+            if isinstance(p, RetryPromptPart)]
+
+
+async def test_hoi_bang_chu_thi_nhac_ask_user_mot_lan() -> None:
+    s = Script(
+        text("Bạn muốn thêm món gì vào danh sách?"),
+        code("await ask_user(question='Bạn muốn thêm món gì?', options=['Sữa', 'Trứng'])"),
+    )
+    with mock_app():
+        r = await go(s, inp("Thêm cái đó vào danh sách nhé"))
+    assert r.kind == "clarification" and r.options == ["Sữa", "Trứng"]
+    assert any("ask_user" in t for t in _retry_texts(s.seen[1]))
+
+
+async def test_cau_tra_loi_co_du_lieu_giu_nguyen_neu_model_tra_lai() -> None:
+    reply = "Bé Na có 2 việc hôm nay. Bạn có muốn xem thêm không?"
+    s = Script(text(reply), text(reply))
+    with mock_app():
+        r = await go(s)
+    assert (r.kind, r.reply) == ("answer", reply)
+    assert len(s.seen) == 2  # chỉ nhắc một lần
+
+
+async def test_cau_tra_loi_khong_hoi_thi_khong_nhac() -> None:
+    s = Script(text("Hôm nay chưa có việc nào."))
+    with mock_app():
+        r = await go(s)
+    assert r.kind == "answer" and len(s.seen) == 1

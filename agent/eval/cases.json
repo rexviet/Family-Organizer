@@ -191,15 +191,16 @@
   {
    "id": "S01",
    "category": "write",
-   "question": "Thêm sữa chua và 2 chục trứng vào danh sách đi chợ",
+   "question": "Thêm sữa chua và 2 chục quả chanh vào danh sách đi chợ",
    "user": "m2",
+   "note": "Không dùng Trứng: fixture đã có Trứng chưa mua, tool cố ý bỏ qua món đã có (bản cũ của câu luôn FAIL)",
    "expect": {
     "ops": [
      {
       "type": "shopping.add",
       "items~": [
        "sữa chua",
-       "trứng"
+       "chanh"
       ]
      }
     ]

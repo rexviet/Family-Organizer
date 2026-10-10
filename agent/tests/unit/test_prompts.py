@@ -109,9 +109,63 @@ def test_agent_co_3_tool_thu_chi_va_dang_ky() -> None:
 def test_co_vi_du_ghi_thu_chi_tien_nguyen_van() -> None:
     text = build_instructions(make())
     assert "propose_create_transaction(" in text
-    assert 'amount="250k"' in text  # truyền nguyên văn, tool tự đổi
+    assert 'amount="300 nghìn"' in text and 'category="food"' in text  # truyền nguyên văn, tool tự đổi
     assert "tự nhân" in text
 
 
 def test_tre_em_khong_de_xuat_thu_chi() -> None:
     assert "propose_*_transaction" in build_instructions(make(role="child"))
+
+
+# --- chỉnh prompt sau eval phase 9 ------------------------------------------------------------------------------------
+
+def test_vi_du_khong_co_id_that_de_model_chep() -> None:
+    # phase 8: mistral-nemo chép nguyên "u_bin" từ ví dụ
+    text = build_instructions(make())
+    assert "u_bin" not in text
+    assert 'assignee_id="<id' in text
+
+
+def test_vi_du_ghi_chi_khong_dung_hom_qua() -> None:
+    # eval phase 9 F01: "Hôm nay đi chợ hết 250k" → ngày hôm qua, chép theo ví dụ "Hôm qua đi chợ hết 250k"
+    text = build_instructions(make())
+    assert "<ngày hôm qua>" not in text and "Hôm qua đi chợ" not in text
+
+
+def test_vi_du_lich_lap_nhieu_thu_mot_lich() -> None:
+    # eval phase 9 P04: "thứ Ba và thứ Năm" bị tách thành 2 lịch
+    text = build_instructions(make())
+    assert "recurrence_weekdays=[" in text and 'recurrence_type="weekly"' in text
+    assert "MỘT lịch" in text
+
+
+def test_vi_du_cau_noi_hai_de_xuat_trong_mot_run_code() -> None:
+    # eval phase 9 C03: propose_* đầu tiên kết thúc lượt → đề xuất thứ hai bị mất
+    text = build_instructions(make())
+    assert "CÙNG MỘT" in text
+    example = text.split("Ví dụ 7")[1]
+    assert example.count("await propose_") >= 2
+
+
+def test_hoi_lai_phai_dung_ask_user_khong_hoi_bang_chu() -> None:
+    assert "đừng hỏi bằng chữ" in build_instructions(make())
+
+
+def test_so_tien_khong_don_vi_khong_tu_them() -> None:
+    text = build_instructions(make())
+    assert "không đơn vị" in text and "đừng tự thêm" in text
+
+
+def test_hang_muc_tu_them_trong_instructions() -> None:
+    d = make()
+    d.custom_categories = [("cc_pet", "Thú cưng")]
+    text = build_instructions(d)
+    assert "cc_pet = Thú cưng" in text and "TRƯỚC hạng mục mặc định" in text
+    assert "cc_pet" not in build_instructions(make())
+
+
+def test_nhan_hang_muc_tu_them_bi_gon_va_cat() -> None:
+    d = make()
+    d.custom_categories = [("cc_x", "Thú\ncưng " + "x" * 200)]
+    text = build_instructions(d)
+    assert "Thú cưng" in text and "x" * 41 not in text

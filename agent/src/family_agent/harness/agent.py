@@ -6,6 +6,7 @@ Agent KHÔNG ghi dữ liệu: thứ duy nhất đi ra là `deps.outcome` (đề 
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -36,7 +37,7 @@ from family_agent.harness.deps import AppDeps, ToolError, UserInfo, build_http_c
 from family_agent.harness.end_when_settled import EndWhenSettled, is_settled
 from family_agent.harness.prompts import build_instructions
 from family_agent.harness.tools.ask import ask_toolset
-from family_agent.harness.tools.finance import finance_toolset
+from family_agent.harness.tools.finance import finance_toolset, load_custom_categories
 from family_agent.harness.tools.plans import plan_toolset
 from family_agent.harness.tools.read import load_members, read_toolset
 from family_agent.harness.tools.shopping import shopping_toolset
@@ -68,6 +69,17 @@ _UNSTAGED_RETRY: Final = (
     "Bạn nói đã thay đổi dữ liệu nhưng chưa gọi tool propose_* nào, nên CHƯA có gì thay đổi. "
     "Hãy gọi đúng tool propose_* (người dùng sẽ bấm Duyệt) hoặc trả lời rằng bạn chưa thực hiện thay đổi."
 )
+
+_QUESTION_RETRY: Final = (
+    "Câu trả lời của bạn kết thúc bằng một câu hỏi. Nếu bạn đang HỎI LẠI người dùng thông tin còn thiếu/mơ hồ để "
+    "làm yêu cầu, hãy gọi `ask_user` (kèm options nếu có vài lựa chọn) thay vì hỏi bằng chữ. Nếu đây là câu trả lời "
+    "có dữ liệu cho câu hỏi của người dùng, hãy trả lại NGUYÊN VĂN câu trả lời đó."
+)
+
+
+def _asks_in_text(output: str) -> bool:
+    lines = [ln.strip() for ln in output.strip().splitlines() if ln.strip()]
+    return bool(lines) and lines[-1].rstrip(" *_)").endswith("?")
 
 
 @dataclass(frozen=True)
@@ -114,6 +126,10 @@ async def _refuse_unstaged_change(ctx: RunContext[AppDeps], output: str) -> str:
     # NFC trước: model/bàn phím có thể trả dấu rời (NFD) làm mẫu có dấu không khớp.
     if _FIRST_PERSON_RE.search(unicodedata.normalize("NFC", output).casefold()) or _BARE_RE.search(fold(output)):
         raise ModelRetry(_UNSTAGED_RETRY)
+    if _asks_in_text(output) and not ctx.deps.question_nudged:
+        # Hỏi lại bằng chữ thì app không có nút chọn và lượt không được đánh dấu là "đang hỏi" — nhắc MỘT lần.
+        ctx.deps.question_nudged = True
+        raise ModelRetry(_QUESTION_RETRY)
     return output
 
 
@@ -166,6 +182,14 @@ def load_history(raw: list[dict[str, Any]]) -> list[ModelMessage]:
             m = replace(m, parts=parts)
         cleaned.append(m)
     return cleaned
+
+
+def user_texts(messages: list[ModelMessage]) -> list[str]:
+    """Chữ người dùng đã gõ trong history (tool thu chi đối chiếu số tiền với lời người dùng)."""
+    return [
+        p.content for m in messages if isinstance(m, ModelRequest)
+        for p in m.parts if isinstance(p, UserPromptPart) and isinstance(p.content, str)
+    ]
 
 
 def _starts_user_turn(m: ModelMessage) -> bool:
@@ -241,12 +265,27 @@ async def run_turn(
         http=http, user=inp.user, today=inp.today, weekday=inp.weekday, code_budget_s=limits.code_max_duration_s,
     )
     try:
-        try:  # thành viên lấy 1 lần đầu lượt; lỗi (kể cả 401) thì chạy tiếp, tool sẽ tự báo lỗi
-            deps.members = await load_members(deps)
-        except ToolError as e:
-            deps.members_error = str(e)
+        # Đầu lượt, song song: thành viên + hạng mục chi tự thêm (chỉ Admin/Thành viên — con/khách bị 403).
+        # Lỗi (kể cả 401) thì chạy tiếp; get_json nhớ cả lỗi trong lượt nên tool dùng tới sẽ báo lại lỗi đó.
+        cats_wanted = deps.user.role in ("admin", "member")
+        members, cats = await asyncio.gather(
+            load_members(deps),
+            load_custom_categories(deps) if cats_wanted else asyncio.sleep(0, []),
+            return_exceptions=True,
+        )
+        if isinstance(members, ToolError):
+            deps.members_error = str(members)
+        elif isinstance(members, BaseException):
+            raise members
+        else:
+            deps.members = members
+        if isinstance(cats, list):
+            deps.custom_categories = cats
+        elif isinstance(cats, BaseException) and not isinstance(cats, ToolError):
+            raise cats
 
         history = load_history(inp.history)
+        deps.user_texts = [*user_texts(history), inp.message]
         usage = RunUsage()
         agent = build_agent(model, limits)
         try:

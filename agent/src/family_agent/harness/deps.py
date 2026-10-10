@@ -111,6 +111,10 @@ class AppDeps:
     weekday: str  # "Thứ Bảy"…
     members: list[Member] = field(default_factory=list)
     members_error: str | None = None
+    # Lời người dùng (tin nhắn này + các tin trước trong history): tool thu chi đối chiếu số tiền model đưa ra.
+    user_texts: list[str] = field(default_factory=list)
+    # Hạng mục chi gia đình tự thêm (id, nhãn) — lấy 1 lần đầu lượt cho Admin/Thành viên, đưa vào instructions.
+    custom_categories: list[tuple[str, str]] = field(default_factory=list)
     outcome: OutcomeSlot = field(default_factory=OutcomeSlot)
     clarifications: ClarificationSink = field(default_factory=ClarificationSink)
     cache: dict[str, asyncio.Task[Any]] = field(default_factory=dict)
@@ -118,6 +122,7 @@ class AppDeps:
     code_budget_s: float = 15.0
     code_spent_s: float = 0.0
     code_steps: set[int] = field(default_factory=set)
+    question_nudged: bool = False  # đã nhắc "hỏi lại thì dùng ask_user" trong lượt này (chỉ nhắc 1 lần)
     tool_failed: bool = False  # propose_*/ask_user vừa ném lỗi trong run_code hiện tại
 
     @property

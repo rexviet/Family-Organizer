@@ -58,6 +58,17 @@ def test_id_trong_cau_ky_vong_ton_tai_trong_du_lieu_gia() -> None:
                     assert op[key] in ids, (c["id"], key)
 
 
+def test_mon_ky_vong_them_chua_co_trong_danh_sach() -> None:
+    # S01 cũ kỳ vọng thêm "trứng" trong khi fixture đã có Trứng chưa mua — tool cố ý bỏ qua món đã có → câu luôn FAIL
+    from family_agent.harness.vocab import fold
+
+    have = {fold(i["name"]) for i in FIXTURE["/api/shopping"]["shoppingItems"] if not i["isPurchased"]}
+    for c in CASES.values():
+        for op in c["expect"].get("ops", []):
+            if op["type"] == "shopping.add":
+                assert not [w for w in op["items~"] if fold(w) in have], c["id"]
+
+
 # --- đọc số ---------------------------------------------------------------------------------------------------------
 
 def test_numbers_in_doc_nhieu_cach_viet() -> None:
@@ -114,13 +125,16 @@ def test_cham_changes_khong_duoc_doi_them_truong() -> None:
 
 def test_cham_items_va_hau_to() -> None:
     assert ev.score(CASES["S01"], result("proposal", operations=[
-        {"type": "shopping.add", "items": [{"name": "Trứng", "quantity": "2 chục"}, {"name": "Sữa chua"}]}])).ok
+        {"type": "shopping.add", "items": [{"name": "Chanh", "quantity": "2 chục"}, {"name": "Sữa chua"}]}])).ok
     assert not ev.score(CASES["S01"], result("proposal", operations=[
-        {"type": "shopping.add", "items": [{"name": "Trứng"}]}])).ok
+        {"type": "shopping.add", "items": [{"name": "Chanh"}]}])).ok
     op = {"type": "plan.create", "title": "Tập võ", "startDate": "2026-10-13 17:00", "endDate": "2027-10-13 18:00",
           "recurrenceType": "weekly", "recurrenceWeekdays": [2, 4]}
     assert ev.score(CASES["P04"], result("proposal", operations=[op])).ok
     assert not ev.score(CASES["P04"], result("proposal", operations=[{**op, "startDate": "2026-10-13 18:00"}])).ok
+    # Cố ý KHÔNG chấp nhận tách thành 2 lịch [2] + [4]: app hỗ trợ 1 lịch nhiều thứ; 2 bản ghi = sửa/xoá phải làm 2 lần
+    split = [{**op, "recurrenceWeekdays": [2]}, {**op, "startDate": "2026-10-15 17:00", "recurrenceWeekdays": [4]}]
+    assert not ev.score(CASES["P04"], result("proposal", operations=split)).ok
 
 
 def test_mo_ho_phai_hoi_lai() -> None:
