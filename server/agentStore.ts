@@ -65,6 +65,9 @@ export interface Proposal {
   appliedAt: string | null;
 }
 
+/** Lỗi gắn cho proposal kẹt `applying` khi app khởi động lại — UI hiện "không chắc đã ghi xong". */
+export const STALE_APPLY_ERROR = "Ứng dụng khởi động lại khi đang áp dụng đề xuất — hãy kiểm tra lại dữ liệu trước khi hỏi lại trợ lý.";
+
 export const DEFAULT_AGENT_DB_PATH = path.join(process.cwd(), "data", "agent.db");
 
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -201,7 +204,7 @@ export class AgentStore {
   failStaleApplying(_now = Date.now()): number {
     return this.db.prepare(
       "UPDATE agent_proposals SET status = 'failed', error = ? WHERE status = 'applying'",
-    ).run("Ứng dụng khởi động lại khi đang áp dụng đề xuất — hãy kiểm tra lại dữ liệu trước khi hỏi lại trợ lý.").changes;
+    ).run(STALE_APPLY_ERROR).changes;
   }
 
   cleanup(now = Date.now()): { conversations: number; proposals: number; expired: number } {

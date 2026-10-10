@@ -10,7 +10,7 @@ import express, { type Request, type Response, type RequestHandler } from "expre
 import { CONTRACT_VERSION, planHash, validateOperations } from "./agentContract.js";
 import { AgentError, type AgentClient, type AgentHealth } from "./agentClient.js";
 import type { AgentTokens } from "./agentToken.js";
-import type { AgentStore, Conversation, Proposal, StoredTurn } from "./agentStore.js";
+import { STALE_APPLY_ERROR, type AgentStore, type Conversation, type Proposal, type StoredTurn } from "./agentStore.js";
 import { buildPreview, type PreviewContext } from "./agentPreview.js";
 import { applyProposal, ENABLED_OPERATIONS, type ApplyDeps } from "./agentApply.js";
 import { UserRole } from "../src/types.js";
@@ -65,6 +65,8 @@ export function publicProposal(p: Proposal) {
   return {
     id: p.id, planHash: p.planHash, preview: p.preview, status: p.status, results: p.results,
     error: p.error, expiresAt: p.expiresAt, appliedAt: p.appliedAt,
+    // App khởi động lại giữa lúc ghi: không biết family.db đã ghi xong chưa.
+    uncertain: p.status === "failed" && p.error === STALE_APPLY_ERROR,
   };
 }
 

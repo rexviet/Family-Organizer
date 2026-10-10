@@ -41,6 +41,7 @@ import { User, UserRole, FamilyRelation, FAMILY_RELATION_LABELS, ROLE_LABELS, Cu
 import { BUILTIN_EXPENSE_CATEGORIES, EXPENSE_CAT_COLOR_KEYS, catColor, resolveCategory } from "../utils/expenseCategories.js";
 import { useModalA11y } from "../hooks/useModalA11y.js";
 import { FancySelect } from "./FancySelect.js";
+import { AgentSettings } from "./assistant/AgentSettings.js";
 import { useTranslation } from "react-i18next";
 import { SUPPORTED_LANGUAGES } from "../i18n/index.js";
 
@@ -1910,6 +1911,11 @@ export function Settings({
           {aiKeyErr && <p className="text-[11px] text-rose-400 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {aiKeyErr}</p>}
           {aiKeyMsg && <p className="text-[11px] text-emerald-400 flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 shrink-0" /> {aiKeyMsg}</p>}
         </div>
+      )}
+
+      {/* Trợ lý nâng cao (AI agent) — bật/tắt + trạng thái, admin only */}
+      {activeTab === "backups" && currentUser.role === UserRole.ADMIN && (
+        <AgentSettings authHeaders={authHeaders} />
       )}
 
       {/* Backup tự động qua Telegram — bản sao offsite hằng đêm, admin only */}

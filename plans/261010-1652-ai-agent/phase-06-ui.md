@@ -1,6 +1,6 @@
 # Phase 6 — UI trợ lý + Thiết lập
 
-**Priority:** P1 · **Effort:** 8h · **Status:** Pending
+**Priority:** P1 · **Effort:** 8h · **Status:** Done (2026-10-10)
 
 ## Context Links
 - [DESIGN.md](../../DESIGN.md) — **đọc trước**, bám checklist cuối file
@@ -31,12 +31,40 @@ Giữ khung trợ lý hiện tại, thay luồng gửi tin và hành động: h�
 5. Chạy thử Sáng/Tối, màn hình hẹp (safe-area), giọng nói.
 
 ## Todo
-- [ ] ProposalCard / ClarificationChips
-- [ ] Luồng agent + fallback
-- [ ] Hội thoại gần nhất / mới
-- [ ] Thiết lập agent
-- [ ] i18n 3 ngôn ngữ
-- [ ] Soát DESIGN.md checklist
+- [x] ProposalCard / ClarificationChips (`src/components/assistant/`)
+- [x] Luồng agent + fallback (503 `fallback` → `/api/assistant/chat` cũ, giữ nguyên code cũ)
+- [x] Hội thoại gần nhất / mới
+- [x] Thiết lập agent (`src/components/assistant/AgentSettings.tsx`, gắn ở tab Hệ thống & Sao lưu)
+- [x] i18n 3 ngôn ngữ (`assistant.agent.*`)
+- [x] Soát DESIGN.md checklist
+
+## Kết quả (2026-10-10)
+
+- `npm run lint && npm test && npm run build` xanh (346 test; mới: `src/utils/assistantAgent.test.ts` 18 test, `publicProposal.uncertain` trong `server/agentRoutes.test.ts`).
+- Chạy tay (bản build, thư mục tạm, agent giả trả đủ 3 kind) trên Chrome: tắt agent → trợ lý cũ trả lời; bật ở Thiết lập (hiện
+  Kết nối/Mô hình AI/Tương thích/Model/Phiên bản); hỏi lại → chip → bấm chip gửi tin; đề xuất thêm → bấm Duyệt 2 lần liền → đúng 2 món
+  (kết quả từng dòng "Đã ghi"); đề xuất sửa+xoá (dòng xoá màu đỏ) → sửa món từ ngoài → Duyệt → "Dữ liệu vừa thay đổi…"; Huỷ;
+  hết hạn (mờ + "Đã hết hạn"); `failed` sau khởi động lại → "Không chắc đã ghi xong — kiểm tra lại"; 429 → báo bận; tải lại trang → hội thoại
+  còn nguyên; "Cuộc trò chuyện mới"; agent lỗi giữa chừng → rơi về trợ lý cũ. Sáng + Tối; khung 390 px (nút "mới" chỉ còn icon). Không lỗi console.
+- Chưa thử: nhập giọng nói trên thiết bị thật (code giọng nói giữ nguyên, dùng chung `sendQuestion`); iPhone thật (safe-area mới thêm cho lớp phủ).
+
+### Quyết định khi làm (--auto)
+- Server thêm `uncertain` vào `publicProposal` (failed do khởi động lại giữa lúc ghi, so khớp `STALE_APPLY_ERROR`) — UI không đoán từ chuỗi lỗi.
+- 429: hiện thông điệp server nếu có (hết 20 lượt/giờ khác "bận vài giây"), không có mới dùng "Trợ lý đang bận…".
+- Agent lỗi khi chạy → chuyển cả phiên sang trợ lý cũ (đến lần mở trợ lý sau sẽ hỏi lại `conversations/latest`).
+- Mỗi lần mở trợ lý tải lại hội thoại gần nhất từ server (nguồn chân lý); proposal pending quá hạn hiển thị "Đã hết hạn" ngay ở client
+  (đồng hồ 30 s) dù server chưa dọn.
+- Khối Thiết lập tách component riêng (Settings.tsx đã 2000+ dòng); công tắc dùng lại mẫu nút "ĐANG BẬT/ĐANG TẮT" của Telegram backup.
+- Logic thuần tách `src/utils/assistantAgent.ts` để TDD (repo không có thư viện test React); component chỉ nhận props, không gọi API.
+
+### Code review (7.5/10, 0 Critical) — đã sửa
+- H1 tải lịch sử về muộn ghi đè tin vừa gửi → `busyRef` (lượt gửi/đặt lại đang chạy thì không ghi đè) + khoá gửi khi đang tải lịch sử.
+- H2 `conversationId` đã bị dọn → kẹt 404 mãi → 404/409 thành `reset` (bỏ id, lượt sau tạo hội thoại mới; đã chạy thử).
+- H3 "Cuộc trò chuyện mới" chạy song song với gửi tin → dùng chung cờ bận.
+- M1 body 2xx sai dạng → lỗi thường, không ném TypeError. M3 bỏ `slate-700` (không remap theme). M4 giọng nói gọi `sendQuestion` mới nhất qua ref.
+- L1 chống bấm Duyệt 2 lần bằng ref (bấm đồng bộ 2 lần → đúng 1 lần ghi). L4 cuộn trong khung chat thay vì `scrollIntoView`.
+- Để lại: M2 (503 không có `fallback` từ proxy → báo lỗi, không tự rơi về trợ lý cũ — giữ đúng hợp đồng server), L2 (card `applying` không tự
+  làm mới — hiếm, mở lại trợ lý là thấy trạng thái mới), L3 (lệch đồng hồ client — server vẫn chặn), L5.
 
 ## Success Criteria
 `npm run lint` xanh; chạy tay đủ 3 kind ở cả 2 theme + mobile; tắt agent → trợ lý cũ vẫn chạy.

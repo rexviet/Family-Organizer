@@ -12,7 +12,7 @@ import type { AddressInfo } from "net";
 import type { Server } from "http";
 import { AgentStore } from "./agentStore.js";
 import { createAgentTokens } from "./agentToken.js";
-import { createAgentRouter, type AgentRouteDeps } from "./agentRoutes.js";
+import { createAgentRouter, publicProposal, type AgentRouteDeps } from "./agentRoutes.js";
 import { AgentError, type AgentHealth, type AgentRunRequest, type AgentRunResponse } from "./agentClient.js";
 import { CONTRACT_VERSION } from "./agentContract.js";
 import { UserRole, type FamilyOrganizerDB, type ShoppingItem } from "../src/types.js";
@@ -361,4 +361,17 @@ it("L6: 'Cuộc trò chuyện mới' khi hội thoại mới nhất còn trống
   const a = await call("POST", "/api/assistant/conversations", "kid");
   const b = await call("POST", "/api/assistant/conversations", "kid");
   expect(b.body.conversation.id).toBe(a.body.conversation.id);
+});
+
+it("publicProposal: failed do app khởi động lại giữa lúc ghi → uncertain=true; failed khác → false", () => {
+  const conv = store.createConversation("u_kid");
+  const mk = () => store.createProposal({ conversationId: conv.id, userId: "u_kid", operations: [], planHash: "h", preview: [] });
+  const stale = mk();
+  expect(store.beginApply(stale.id)).toBe(true);
+  store.failStaleApplying();
+  const guard = mk();
+  store.markPending(guard.id, "failed", "Dữ liệu đã thay đổi");
+  expect(publicProposal(store.getProposal(stale.id)!).uncertain).toBe(true);
+  expect(publicProposal(store.getProposal(guard.id)!).uncertain).toBe(false);
+  expect(publicProposal(mk()).uncertain).toBe(false);
 });

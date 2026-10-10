@@ -33,7 +33,7 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | 3 | [Agent service (Python) khung](./phase-03-agent-service.md) | Done |
 | 4 | [Agent harness: tool đọc, hỏi lại, đề xuất đi chợ](./phase-04-agent-harness.md) | Done — 346 pytest, model thật 9–10/10, 0 ghi |
 | 5 | [Node: proxy, lưu trữ, Duyệt/apply](./phase-05-node-integration.md) | Done — E2E thật: đề xuất → Duyệt → món ở Đi chợ + SSE |
-| 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Pending |
+| 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
 | 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Pending |
 | 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Pending |
 | 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Pending |
