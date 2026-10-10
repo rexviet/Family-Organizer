@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import sys
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, ValidationError, field_validator
+from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 MIN_SECRET_LEN = 32
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
     run_timeout_s: float = Field(90, gt=0, validation_alias="AGENT_RUN_TIMEOUT_S")
     max_concurrent_runs: int = Field(2, ge=1, validation_alias="AGENT_MAX_CONCURRENT_RUNS")
     max_body_bytes: int = Field(4 * 1024 * 1024, ge=1, validation_alias="AGENT_MAX_BODY_BYTES")
+    # Thời gian chạy code (Monty) tính dồn cho cả lượt. Monty chạy ĐỒNG BỘ trên event loop nên đây cũng là thời gian
+    # tối đa /health có thể bị treo bởi một lượt chạy code vô hạn; phải thoả 2× giá trị này < run_timeout_s.
+    code_max_duration_s: float = Field(15, gt=0, validation_alias="AGENT_CODE_MAX_DURATION_S")
 
     @field_validator("shared_secret")
     @classmethod
@@ -43,6 +47,21 @@ class Settings(BaseSettings):
         if not (raw.isascii() and raw.isprintable() and raw.strip() == raw and raw.strip()):
             raise ValueError("chỉ dùng ký tự ASCII in được, không có khoảng trắng ở hai đầu")
         return v
+
+    @field_validator("app_internal_url")
+    @classmethod
+    def _url_goc(cls, v: str) -> str:
+        # Allowlist của client đọc khớp path tuyệt đối (/api/…) nên URL có tiền tố path sẽ làm mọi lần đọc bị chặn.
+        if urlsplit(v).path not in ("", "/"):
+            raise ValueError("chỉ nhận URL gốc (không có path), ví dụ http://family-organizer:3000")
+        return v
+
+    @model_validator(mode="after")
+    def _code_ngan_hon_luot(self) -> Settings:
+        # Cả lượt có thể tốn tới 2 ngân sách chạy code (xem harness/code_guard.py).
+        if 2 * self.code_max_duration_s >= self.run_timeout_s:
+            raise ValueError("2 × AGENT_CODE_MAX_DURATION_S phải nhỏ hơn AGENT_RUN_TIMEOUT_S")
+        return self
 
     @property
     def llm_configured(self) -> bool:

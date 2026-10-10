@@ -21,6 +21,7 @@ dev = [
   "pytest>=8",
   "ruff>=0.6",
   "mypy>=1.11",
+  "respx>=0.23.1",
 ]
 
 [build-system]
@@ -37,6 +38,7 @@ addopts = "-q"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["spike"]  # spike phase 1 là mã thử nghiệm đã chốt, không lint
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S"]

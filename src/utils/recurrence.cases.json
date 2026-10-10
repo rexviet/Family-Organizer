@@ -1,0 +1,452 @@
+{
+  "_doc": "Case dùng chung cho src/utils/recurrence.test.ts (vitest) và agent/tests/unit/test_recurrence.py. plan được trộn với {isRecurring:true,startDate:'2026-07-01'}; expected là mảng ngày YYYY-MM-DD; case guard dùng expectedCount/First/Last.",
+  "parsePlanDate": [
+    {
+      "name": "ngày thuần",
+      "input": "2026-07-05",
+      "expected": "2026-07-05"
+    },
+    {
+      "name": "ngày kèm giờ",
+      "input": "2026-07-05 14:30",
+      "expected": "2026-07-05"
+    },
+    {
+      "name": "chuỗi rỗng",
+      "input": "",
+      "expected": null
+    },
+    {
+      "name": "chuỗi hỏng",
+      "input": "khong-phai-ngay",
+      "expected": null
+    },
+    {
+      "name": "undefined",
+      "input": null,
+      "expected": null
+    },
+    {
+      "name": "thiếu số 0 đầu → hỏng",
+      "input": "2026-7-5",
+      "expected": null
+    },
+    {
+      "name": "JS tràn ngày: 31/02 → 03/03 (new Date(y,m,d))",
+      "input": "2026-02-31",
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "JS tràn tháng: tháng 13 → tháng 1 năm sau",
+      "input": "2026-13-01",
+      "expected": "2027-01-01"
+    },
+    {
+      "name": "JS: ngày 0 → ngày cuối tháng trước",
+      "input": "2026-07-00",
+      "expected": "2026-06-30"
+    }
+  ],
+  "expand": [
+    {
+      "group": "hằng tuần (bug 07/2026: tô mọi ngày)",
+      "name": "chỉ trả đúng các thứ đã chọn, không tràn mọi ngày trong khoảng",
+      "plan": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-14",
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          6,
+          0
+        ]
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-04",
+        "2026-07-05",
+        "2026-07-11",
+        "2026-07-12"
+      ]
+    },
+    {
+      "group": "hằng tuần (bug 07/2026: tô mọi ngày)",
+      "name": "bắt đầu Thứ 5 nhưng chọn lặp Thứ 4 → lần đầu là Thứ 4 KẾ TIẾP",
+      "plan": {
+        "startDate": "2026-07-23",
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          3
+        ]
+      },
+      "from": "2026-07-01",
+      "to": "2026-08-31",
+      "expected": [
+        "2026-07-29",
+        "2026-08-05",
+        "2026-08-12",
+        "2026-08-19",
+        "2026-08-26"
+      ]
+    },
+    {
+      "group": "hằng tuần (bug 07/2026: tô mọi ngày)",
+      "name": "không chọn thứ nào → mặc định thứ của ngày bắt đầu (2026-07-01 là Thứ Tư)",
+      "plan": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-31",
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": []
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-01",
+        "2026-07-08",
+        "2026-07-15",
+        "2026-07-22",
+        "2026-07-29"
+      ]
+    },
+    {
+      "group": "hằng tuần (bug 07/2026: tô mọi ngày)",
+      "name": "không có recurrenceWeekdays (undefined) → mặc định thứ của ngày bắt đầu",
+      "plan": {
+        "startDate": "2026-07-05",
+        "recurrenceType": "weekly"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-20",
+      "expected": [
+        "2026-07-05",
+        "2026-07-12",
+        "2026-07-19"
+      ]
+    },
+    {
+      "group": "hằng tuần (bug 07/2026: tô mọi ngày)",
+      "name": "tôn trọng endDate: không sinh occurrence sau ngày kết thúc",
+      "plan": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-05",
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          0
+        ]
+      },
+      "from": "2026-07-01",
+      "to": "2026-08-31",
+      "expected": [
+        "2026-07-05"
+      ]
+    },
+    {
+      "group": "hằng tuần (bug 07/2026: tô mọi ngày)",
+      "name": "Chủ nhật = 0 và Thứ Bảy = 6 (quy ước getDay của JS, không phải weekday() của Python)",
+      "plan": {
+        "startDate": "2026-10-05",
+        "endDate": "2026-10-18",
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          1,
+          6,
+          0
+        ]
+      },
+      "from": "2026-10-05",
+      "to": "2026-10-18",
+      "expected": [
+        "2026-10-05",
+        "2026-10-10",
+        "2026-10-11",
+        "2026-10-12",
+        "2026-10-17",
+        "2026-10-18"
+      ]
+    },
+    {
+      "group": "hằng ngày",
+      "name": "mọi ngày trong giao của [start,end] sự kiện và khoảng xem",
+      "plan": {
+        "startDate": "2026-07-03",
+        "endDate": "2026-07-06",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-03",
+        "2026-07-04",
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "group": "hằng ngày",
+      "name": "khoảng xem bắt đầu giữa chừng → cắt phần trước",
+      "plan": {
+        "startDate": "2026-07-01",
+        "endDate": "2026-07-10",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-08",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-08",
+        "2026-07-09",
+        "2026-07-10"
+      ]
+    },
+    {
+      "group": "hằng ngày",
+      "name": "ngày kèm giờ ở startDate/endDate vẫn chỉ lấy phần ngày",
+      "plan": {
+        "startDate": "2026-07-03 08:00",
+        "endDate": "2026-07-04 17:30",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "group": "hằng tháng",
+      "name": "đúng ngày-trong-tháng của ngày bắt đầu, qua nhiều tháng",
+      "plan": {
+        "startDate": "2026-01-15",
+        "endDate": "2026-12-31",
+        "recurrenceType": "monthly"
+      },
+      "from": "2026-07-01",
+      "to": "2026-09-30",
+      "expected": [
+        "2026-07-15",
+        "2026-08-15",
+        "2026-09-15"
+      ]
+    },
+    {
+      "group": "hằng tháng",
+      "name": "ngày 31 → bỏ qua tháng thiếu (không nhảy sang mùng 1)",
+      "plan": {
+        "startDate": "2026-01-31",
+        "endDate": "2026-12-31",
+        "recurrenceType": "monthly"
+      },
+      "from": "2026-02-01",
+      "to": "2026-04-30",
+      "expected": [
+        "2026-03-31"
+      ]
+    },
+    {
+      "group": "hằng năm (kỷ niệm/giỗ)",
+      "name": "đúng ngày+tháng của ngày bắt đầu, mỗi năm một lần",
+      "plan": {
+        "startDate": "2020-08-12",
+        "recurrenceType": "yearly"
+      },
+      "from": "2027-01-01",
+      "to": "2027-12-31",
+      "expected": [
+        "2027-08-12"
+      ]
+    },
+    {
+      "group": "hằng năm (kỷ niệm/giỗ)",
+      "name": "lặp VÔ HẠN: bắt đầu từ 2020 vẫn xuất hiện ở 2030",
+      "plan": {
+        "startDate": "2020-03-10",
+        "recurrenceType": "yearly"
+      },
+      "from": "2030-03-01",
+      "to": "2030-03-31",
+      "expected": [
+        "2030-03-10"
+      ]
+    },
+    {
+      "group": "hằng năm (kỷ niệm/giỗ)",
+      "name": "ngoài đúng ngày kỷ niệm trong khoảng xem → rỗng",
+      "plan": {
+        "startDate": "2020-08-12",
+        "recurrenceType": "yearly"
+      },
+      "from": "2027-09-01",
+      "to": "2027-09-30",
+      "expected": []
+    },
+    {
+      "group": "hằng năm (kỷ niệm/giỗ)",
+      "name": "29/02 xuất hiện đúng ngày 29/02 của năm nhuận",
+      "plan": {
+        "startDate": "2024-02-29",
+        "recurrenceType": "yearly"
+      },
+      "from": "2028-01-01",
+      "to": "2028-12-31",
+      "expected": [
+        "2028-02-29"
+      ]
+    },
+    {
+      "group": "bỏ trống ngày kết thúc = lặp VÔ HẠN",
+      "name": "hằng ngày không có endDate → mọi ngày trong khoảng xem",
+      "plan": {
+        "startDate": "2026-07-01",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-05",
+      "expected": [
+        "2026-07-01",
+        "2026-07-02",
+        "2026-07-03",
+        "2026-07-04",
+        "2026-07-05"
+      ]
+    },
+    {
+      "group": "bỏ trống ngày kết thúc = lặp VÔ HẠN",
+      "name": "hằng tuần không có endDate → lặp qua nhiều tháng, không dừng ở ngày bắt đầu",
+      "plan": {
+        "startDate": "2026-07-01",
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          3
+        ]
+      },
+      "from": "2026-09-01",
+      "to": "2026-09-30",
+      "expected": [
+        "2026-09-02",
+        "2026-09-09",
+        "2026-09-16",
+        "2026-09-23",
+        "2026-09-30"
+      ]
+    },
+    {
+      "group": "bỏ trống ngày kết thúc = lặp VÔ HẠN",
+      "name": "endDate rỗng ('') cũng coi là lặp vô hạn",
+      "plan": {
+        "startDate": "2026-07-01",
+        "endDate": "",
+        "recurrenceType": "monthly"
+      },
+      "from": "2026-10-01",
+      "to": "2026-10-31",
+      "expected": [
+        "2026-10-01"
+      ]
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "recurrenceType none → mảng rỗng",
+      "plan": {
+        "recurrenceType": "none"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": []
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "isRecurring=false → mảng rỗng",
+      "plan": {
+        "isRecurring": false,
+        "startDate": "2026-07-01",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": []
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "thiếu recurrenceType → mảng rỗng",
+      "plan": {},
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": []
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "startDate hỏng → mảng rỗng, không crash",
+      "plan": {
+        "startDate": "xxx",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": []
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "endDate hỏng → coi như sự kiện 1 ngày",
+      "plan": {
+        "startDate": "2026-07-10",
+        "endDate": "hong",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-10"
+      ]
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "endDate < startDate → coi như sự kiện 1 ngày",
+      "plan": {
+        "startDate": "2026-07-10",
+        "endDate": "2026-07-01",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": [
+        "2026-07-10"
+      ]
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "sự kiện bắt đầu sau khoảng xem → rỗng",
+      "plan": {
+        "startDate": "2026-09-01",
+        "endDate": "2026-09-30",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-01",
+      "to": "2026-07-31",
+      "expected": []
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "khoảng xem đảo ngược (from > to) → rỗng",
+      "plan": {
+        "startDate": "2026-07-01",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-07-31",
+      "to": "2026-07-01",
+      "expected": []
+    },
+    {
+      "group": "biên & dữ liệu xấu",
+      "name": "guard 400 vòng lặp: khoảng quá dài bị cắt ở đúng 400 ngày kể từ ngày đầu",
+      "plan": {
+        "startDate": "2026-01-01",
+        "recurrenceType": "daily"
+      },
+      "from": "2026-01-01",
+      "to": "2028-01-01",
+      "expectedCount": 400,
+      "expectedFirst": "2026-01-01",
+      "expectedLast": "2027-02-04"
+    }
+  ]
+}

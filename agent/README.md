@@ -3,7 +3,7 @@
 Dịch vụ trợ lý AI (Python, Pydantic AI + CodeMode) chạy cạnh app Node. Spec: [docs/ai-agent-spec.md](../docs/ai-agent-spec.md).
 Agent **chỉ đề xuất** — mọi thay đổi dữ liệu do Node ghi sau khi người dùng Duyệt.
 
-> Trạng thái: khung dịch vụ (phase 3). `/run` hiện là agent rỗng, chưa có tool đọc/đề xuất (phase 4).
+> Trạng thái: phase 4 — agent thật với 9 tool đọc, `ask_user` và 3 tool đề xuất đi chợ. Tool đề xuất Việc/Lịch/Thu chi: phase 8–9.
 
 ## Endpoint
 
@@ -27,7 +27,17 @@ Mã lỗi của `/run` (body luôn là `{"error": "<mã>"}`):
 | 504 | `timeout` | Lượt chạy quá `AGENT_RUN_TIMEOUT_S` |
 | 502 | `llm_error` | Endpoint LLM lỗi (chi tiết chỉ log tên lớp lỗi) |
 
-Thành công: `{kind, reply, history, usage:{requests,toolCalls,inputTokens,outputTokens}, contractVersion}`.
+Thành công: `{kind, reply, history, usage:{requests,toolCalls,inputTokens,outputTokens}, contractVersion}` — `kind` là một trong:
+
+| `kind` | Trường thêm | Ghi chú |
+| :--- | :--- | :--- |
+| `answer` | — | `reply` là câu trả lời của model |
+| `proposal` | `operations` | Đã qua validator hợp đồng (không bao giờ trả đề xuất sai). `reply` do **code** dựng ("Mình đề xuất N thay đổi…"), không phải model |
+| `clarification` | `question`, `options` | Đúng chữ do tool `ask_user`/tool đề xuất ghi; `reply` = `question`. Có cả câu hỏi lẫn đề xuất thì câu hỏi thắng |
+
+`history` là `ModelMessagesTypeAdapter` JSON, đã cắt còn 20 lượt gần nhất (chỉ cắt ở tin nhắn người dùng, không để tool call mồ côi),
+bỏ `instructions` (dựng lại mỗi lượt). Với `proposal`/`clarification` lượt kết thúc bằng lời dẫn của code nên lượt sau có ngữ cảnh.
+Vượt `request_limit` (6 request model/lượt) → `answer` "câu hỏi phức tạp, hãy hỏi gọn hơn" (không phải 502).
 Node phải từ chối khi `contractVersion` lệch với bản của mình.
 
 ## Biến môi trường
@@ -41,9 +51,10 @@ Node phải từ chối khi `contractVersion` lệch với bản của mình.
 | `AGENT_LLM_TEMPERATURE` | (không gửi) | 0–2 |
 | `AGENT_LLM_TIMEOUT_S` | `60` | Timeout mỗi request tới LLM |
 | `AGENT_LLM_MAX_TOKENS` | (không gửi) | |
-| `APP_INTERNAL_URL` | `http://family-organizer:3000` | App Node trong mạng compose (tool đọc, phase 4) |
+| `APP_INTERNAL_URL` | `http://family-organizer:3000` | App Node trong mạng compose — tool đọc gọi 9 endpoint GET (allowlist cứng, timeout 10 s) bằng `agentToken` của lượt |
 | `AGENT_VERSION` | `dev` | CI truyền qua `--build-arg AGENT_VERSION=X.Y.Z` |
 | `AGENT_RUN_TIMEOUT_S` | `90` | Timeout cứng của một lượt |
+| `AGENT_CODE_MAX_DURATION_S` | `15` | Tổng thời gian chạy code của model (Monty) trong một lượt; 2× giá trị này phải < `AGENT_RUN_TIMEOUT_S`. Xem "Lưu ý vận hành" |
 | `AGENT_MAX_CONCURRENT_RUNS` | `2` | Quá thì 429 |
 | `AGENT_MAX_BODY_BYTES` | `4194304` | |
 
@@ -102,3 +113,27 @@ tên lớp). **Không** log nội dung hội thoại, token, key hay URL LLM.
 `src/family_agent/contract.py` — `canonical`, `plan_hash`, `fingerprint`, `validate_operations`; xem
 [contracts/README.md](contracts/README.md). Đổi hợp đồng → tăng `contractVersion`, sửa cả bản Node
 (`server/agentContract.ts`) và `vectors.json` trong cùng một thay đổi.
+
+## Cấu trúc `harness/` (phase 4)
+
+| File | Vai trò |
+| :--- | :--- |
+| `agent.py` | `run_turn`: dựng deps + agent, chạy, đổi kết quả thành 3 kind + history; output validator ("đã thêm…" mà không có đề xuất → `ModelRetry`) |
+| `deps.py` | `AppDeps` mỗi lượt; client HTTP chỉ-GET + allowlist 9 endpoint; cache 1 request/endpoint/lượt; lỗi tiếng Việt cố định (không URL/token) |
+| `outcome.py`, `clarify.py` | `OutcomeSlot` (≤ 10 op, không trùng, mỗi op qua `contract.validate_operations`), `ClarificationSink` |
+| `end_when_settled.py` | Kết thúc lượt ngay khi có đề xuất hoặc câu hỏi (không request model thứ 2) |
+| `prompts.py` | Instructions: ngày/thứ, tuần này (Thứ Hai–Chủ nhật), bảng thành viên, hạng mục chi, luật đề xuất, 2 ví dụ |
+| `recurrence.py` | Bản port `src/utils/recurrence.ts`; case kiểm dùng chung `src/utils/recurrence.cases.json` (vitest + pytest) |
+| `tools/read.py`, `tools/shopping.py`, `tools/ask.py` | 9 tool đọc, 3 tool đề xuất đi chợ, `ask_user` |
+
+`agentToken` chỉ nằm trong header của client HTTP của lượt — không vào instructions, tham số/kết quả tool, history hay log.
+
+## Lưu ý vận hành
+
+- **Monty chạy đồng bộ trên event loop** (đo ở phase 4): code vô hạn của model làm `/health` và mọi lượt khác treo. `harness/code_guard.py`
+  chặn: một `run_code` mỗi phản hồi, không `restart`, và tổng thời gian chạy code của lượt ≤ `AGENT_CODE_MAX_DURATION_S` (mặc định 15 s;
+  hết thì từ chối `run_code` tiếp). Treo liên tục tối đa ≈ một ngân sách, cả lượt ≲ hai ngân sách nên cấu hình bắt buộc
+  `2 × AGENT_CODE_MAX_DURATION_S < AGENT_RUN_TIMEOUT_S` (mặc định 30 < 90). Lượt vẫn bị cắt
+  cứng ở `AGENT_RUN_TIMEOUT_S` ở điểm `await` kế tiếp (504).
+- `APP_INTERNAL_URL` phải là URL gốc (không path). Model không làm nổi yêu cầu (hết retry) → `answer` thân thiện, không phải 502.
+- Thử tay với model thật: `eval/phase4_smoke.py` (không nằm trong image, không chạy bởi pytest) — xem docstring đầu file.

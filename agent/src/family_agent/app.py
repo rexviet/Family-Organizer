@@ -1,4 +1,4 @@
-"""FastAPI: chỉ có GET /health và POST /run (spec §3.1, §4).
+"""FastAPI: chỉ có GET /health và POST /run (spec §3.1, §4). Phần agent nằm ở family_agent.harness.
 
 Thứ tự kiểm ở /run: secret (401) → LLM đã cấu hình (503) → body (413/422) → còn slot (429) → chạy (≤ timeout).
 Không bao giờ trả/log nội dung hội thoại, token người hỏi, key hay base_url của LLM.
@@ -12,19 +12,19 @@ import json
 import logging
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Any, Literal
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
-from pydantic_ai import Agent
-from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 from pydantic_ai.models import Model
 from starlette.requests import ClientDisconnect
 
 from family_agent.contract import CONTRACT_VERSION
+from family_agent.harness.agent import TurnInput, TurnLimits, TurnResult, run_turn
+from family_agent.harness.deps import UserInfo
 from family_agent.model import build_model
 from family_agent.settings import Settings
 
@@ -59,14 +59,6 @@ class RunRequest(BaseModel):
     weekday: str = Field(min_length=1, max_length=20)
 
 
-@dataclass
-class TurnResult:
-    kind: Literal["answer"]
-    reply: str
-    history: list[Any]
-    usage: dict[str, int]
-
-
 def _error(status: int, code: str, **extra: Any) -> JSONResponse:
     return JSONResponse({"error": code, **extra}, status_code=status)
 
@@ -98,56 +90,33 @@ async def _read_body(request: Request, limit: int) -> bytes:
     return b"".join(chunks)
 
 
-def _load_history(raw: list[dict[str, Any]]) -> list[ModelMessage]:
-    """History không parse được (vd. sau nâng cấp thư viện) → bỏ, không làm hỏng lượt."""
-    if not raw:
-        return []
-    try:
-        return ModelMessagesTypeAdapter.validate_python(raw)
-    except ValidationError:
-        log.warning(json.dumps({"event": "history_dropped", "messages": len(raw)}))
-        return []
-
-
-# ---------------------------------------------------------------------------
-# Một lượt — phase 3: agent rỗng (chưa có tool). Phase 4 thay bằng harness thật.
-# ---------------------------------------------------------------------------
-
-
-def _instructions(req: RunRequest) -> str:
-    return (
-        "Bạn là trợ lý của gia đình dùng ứng dụng Family Organizer. Trả lời ngắn gọn bằng tiếng Việt.\n"
-        f"Hôm nay là {req.today} ({req.weekday}), múi giờ Asia/Ho_Chi_Minh."
-    )
-
-
-async def run_turn(model: Model, req: RunRequest) -> TurnResult:
-    agent = Agent(model, instructions=_instructions(req))
-    result = await agent.run(req.message, message_history=_load_history(req.history))
-    usage = result.usage  # thuộc tính trong pydantic-ai 2.33 (không gọi hàm)
-    return TurnResult(
-        kind="answer",
-        reply=str(result.output),
-        history=ModelMessagesTypeAdapter.dump_python(result.all_messages(), mode="json"),
-        usage={
-            "requests": usage.requests,
-            "toolCalls": usage.tool_calls,
-            "inputTokens": usage.input_tokens,
-            "outputTokens": usage.output_tokens,
-        },
-    )
-
-
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 
 
-def create_app(settings: Settings, *, model_factory: ModelFactory = build_model) -> FastAPI:
+def _payload(turn: TurnResult) -> dict[str, Any]:
+    """JSON thành công của /run (spec §4): reply luôn có; proposal thêm operations; clarification thêm question."""
+    out: dict[str, Any] = {"kind": turn.kind, "reply": turn.reply}
+    if turn.kind == "proposal":
+        out["operations"] = turn.operations
+    elif turn.kind == "clarification":
+        out["question"] = turn.question
+        out["options"] = turn.options
+    return out | {"history": turn.history, "usage": turn.usage, "contractVersion": CONTRACT_VERSION}
+
+
+def create_app(
+    settings: Settings,
+    *,
+    model_factory: ModelFactory = build_model,
+    http_transport: httpx.AsyncBaseTransport | None = None,  # chỉ để test: giả app Node
+) -> FastAPI:
     # Không có /docs, /redoc, /openapi.json — chỉ đúng 2 endpoint.
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     model: Model | None = model_factory(settings) if settings.llm_configured else None
     expected_secret = settings.shared_secret.get_secret_value().encode("utf-8")
+    limits = TurnLimits(code_max_duration_s=settings.code_max_duration_s)
     inflight = 0
 
     @app.exception_handler(RequestValidationError)
@@ -198,7 +167,15 @@ def create_app(settings: Settings, *, model_factory: ModelFactory = build_model)
         deadline = asyncio.timeout(settings.run_timeout_s)
         try:
             async with deadline:
-                turn = await run_turn(model, req)
+                turn = await run_turn(
+                    model,
+                    TurnInput(
+                        message=req.message, history=req.history,
+                        user=UserInfo(req.user.id, req.user.fullName, req.user.role),
+                        agent_token=req.agentToken.get_secret_value(), today=req.today, weekday=req.weekday,
+                    ),
+                    app_base_url=settings.app_internal_url, limits=limits, transport=http_transport,
+                )
         except asyncio.CancelledError:
             entry["status"] = 499  # lượt bị huỷ từ ngoài (client ngắt / server tắt)
             raise
@@ -210,13 +187,7 @@ def create_app(settings: Settings, *, model_factory: ModelFactory = build_model)
             return _error(502, "llm_error")
         else:
             entry |= {"status": 200, "kind": turn.kind, **turn.usage}
-            return JSONResponse({
-                "kind": turn.kind,
-                "reply": turn.reply,
-                "history": turn.history,
-                "usage": turn.usage,
-                "contractVersion": CONTRACT_VERSION,
-            })
+            return JSONResponse(_payload(turn))
         finally:
             inflight -= 1
             entry["ms"] = round((time.monotonic() - started) * 1000)

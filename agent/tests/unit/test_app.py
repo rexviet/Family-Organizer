@@ -3,12 +3,13 @@
 import asyncio
 import json
 import logging
+import time
 from collections.abc import Callable
 from typing import Any
 
 import httpx
 import pytest
-from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart
+from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models import Model
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.test import TestModel
@@ -34,6 +35,7 @@ def make_settings(**kw: Any) -> Settings:
     base: dict[str, Any] = {
         "shared_secret": SECRET, "llm_base_url": BASE_URL, "llm_api_key": API_KEY,
         "llm_model": "kr/deepseek-3.2", "version": "1.2.3",
+        "code_max_duration_s": 0.04,  # 2× phải < run_timeout_s; các test timeout đặt run_timeout_s rất nhỏ
     }
     s: Settings = build_settings(**(base | kw))
     return s
@@ -56,8 +58,11 @@ def client_for() -> Callable[..., Any]:
     """client_for(settings, model) → AsyncClient gắn app qua ASGITransport."""
 
     def make(settings: Settings | None = None, model: Model | None = None) -> httpx.AsyncClient:
-        m = model or TestModel(custom_output_text="Hôm nay có 2 việc.")
-        app = create_app(settings or make_settings(), model_factory=lambda _s: m)
+        m = model or TestModel(custom_output_text="Hôm nay có 2 việc.", call_tools=[])
+        app = create_app(
+            settings or make_settings(), model_factory=lambda _s: m,
+            http_transport=httpx.MockTransport(lambda _r: httpx.Response(200, json={"users": []})),  # giả app Node
+        )
         return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://agent")
 
     return make
@@ -334,3 +339,108 @@ async def test_client_ngat_khi_dang_gui_body() -> None:
     }
     await app(scope, receive, send)  # không được ném lỗi (uvicorn sẽ log traceback)
     assert sent and sent[0]["status"] == 400
+
+
+# --- /run: harness thật (3 kind) ----------------------------------------------------------------------
+
+def app_mock(seen: list[httpx.Request]) -> httpx.MockTransport:
+    """Giả app Node: ghi lại mọi request để chứng minh agent chỉ GET."""
+    data = {
+        "/api/users": {"users": [{"id": "user_me", "fullName": "Mẹ Lan", "role": "member", "familyRelation": "me"}]},
+        "/api/shopping": {"shoppingItems": []},
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json=data.get(request.url.path, {}))
+
+    return httpx.MockTransport(handler)
+
+
+def code_call(src: str) -> ModelResponse:
+    return ModelResponse(parts=[ToolCallPart("run_code", {"code": src})])
+
+
+def app_client(model: Model, transport: httpx.MockTransport, settings: Settings | None = None) -> httpx.AsyncClient:
+    app = create_app(settings or make_settings(), model_factory=lambda _s: model, http_transport=transport)
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://agent")
+
+
+async def test_run_tra_proposal_chi_get_va_khong_lo_token() -> None:
+    seen: list[httpx.Request] = []
+    model = FunctionModel(lambda _m, _i: code_call("await propose_add_shopping_items(items=['Sữa chua'])"))
+    async with app_client(model, app_mock(seen)) as c:
+        r = await c.post("/run", json=body(message="thêm sữa chua"), headers=H)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["kind"] == "proposal"
+    assert data["operations"] == [{"type": "shopping.add", "items": [{"name": "Sữa chua"}]}]
+    assert data["reply"] == "Mình đề xuất 1 thay đổi — bạn xem và bấm Duyệt nhé."
+    assert "question" not in data and data["usage"]["requests"] == 1
+    assert TOKEN not in r.text
+    assert {q.method for q in seen} == {"GET"}
+    assert all(q.headers["authorization"] == f"Bearer {TOKEN}" for q in seen)
+
+
+async def test_run_tra_clarification() -> None:
+    ask = "await ask_user(question='Giao cho bé nào?', options=['Na', 'Bin'])"
+    model = FunctionModel(lambda _m, _i: code_call(ask))
+    async with app_client(model, app_mock([])) as c:
+        r = await c.post("/run", json=body(message="giao việc cho bé"), headers=H)
+    data = r.json()
+    assert (data["kind"], data["question"], data["options"]) == ("clarification", "Giao cho bé nào?", ["Na", "Bin"])
+    assert data["reply"] == "Giao cho bé nào?" and "operations" not in data
+
+
+async def test_run_code_chay_vo_han_bi_chan_boi_gioi_han_va_health_van_tra_loi() -> None:
+    """Phát hiện phase 4: Monty chạy ĐỒNG BỘ trên event loop → /health (và mọi lượt khác) bị treo tới khi hết
+    `max_duration_secs`; sau đó Monty báo lỗi cho model và lượt cứ thế tiếp tục (ở đây model ngủ → timeout 504)."""
+    steps = iter([code_call("while True:\n    pass"), None])
+
+    async def fn(_m: list[ModelMessage], _i: AgentInfo) -> ModelResponse:
+        step = next(steps)
+        if step is None:
+            await asyncio.sleep(5)  # sau khi Monty ngắt, lượt chờ ở điểm await → timeout cứng cắt được
+        assert step is not None
+        return step
+
+    code_limit, run_limit = 0.4, 1.0
+    settings = make_settings(run_timeout_s=run_limit, code_max_duration_s=code_limit)
+    gaps: list[float] = []
+
+    async def ticker(stop: asyncio.Event) -> None:
+        last = time.monotonic()
+        while not stop.is_set():
+            await asyncio.sleep(0.02)
+            now = time.monotonic()
+            gaps.append(now - last)
+            last = now
+
+    stop = asyncio.Event()
+    async with app_client(FunctionModel(fn), app_mock([]), settings) as c:
+        tick = asyncio.create_task(ticker(stop))
+        await asyncio.sleep(0)  # để ticker chạy một nhịp
+        started = time.monotonic()
+        run_task = asyncio.create_task(c.post("/run", json=body(), headers=H))
+        health_task = asyncio.create_task(c.get("/health"))
+        health = await asyncio.wait_for(health_task, code_limit + 1.5)
+        health_after = time.monotonic() - started
+        r = await asyncio.wait_for(run_task, run_limit + 1.5)
+        run_after = time.monotonic() - started
+        stop.set()
+        await tick
+    assert health.status_code == 200
+    assert r.status_code == 504
+    assert max(gaps) >= code_limit * 0.8, "Monty không còn chạy đồng bộ? Cập nhật ghi chú phase 4 nếu đúng vậy"
+    assert max(gaps) <= code_limit + 0.5  # treo tối đa ≈ max_duration, không hơn
+    assert health_after <= code_limit + 1.0
+    assert run_after <= run_limit + 1.0
+
+
+async def test_model_viet_code_loi_mai_van_tra_answer_than_thien_khong_502() -> None:
+    """run_code có ngưỡng retry riêng (3) → UnexpectedModelBehavior → answer thân thiện (không 502)."""
+    model = FunctionModel(lambda _m, _i: code_call("1 +"))
+    async with app_client(model, app_mock([])) as c:
+        r = await c.post("/run", json=body(), headers=H)
+    assert r.status_code == 200 and r.json()["kind"] == "answer"
+    assert TOKEN not in r.text

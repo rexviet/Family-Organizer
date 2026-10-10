@@ -86,3 +86,31 @@ def test_bien_env_khong_tien_to_bi_bo_qua(monkeypatch: pytest.MonkeyPatch) -> No
 def test_secret_phai_ascii_in_duoc_khong_khoang_trang_bien(bad: str) -> None:
     with pytest.raises(ValidationError):
         build_settings(shared_secret=bad)
+
+
+def test_gioi_han_code_mac_dinh_va_doc_tu_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AGENT_SHARED_SECRET", SECRET)
+    assert Settings().code_max_duration_s == 15
+    monkeypatch.setenv("AGENT_CODE_MAX_DURATION_S", "5")
+    assert Settings().code_max_duration_s == 5
+
+
+def test_thoi_gian_chay_code_phai_nho_hon_timeout_cua_luot() -> None:
+    with pytest.raises(ValidationError):
+        build_settings(shared_secret=SECRET, run_timeout_s=10, code_max_duration_s=10)
+    with pytest.raises(ValidationError):
+        build_settings(shared_secret=SECRET, code_max_duration_s=0)
+    assert build_settings(shared_secret=SECRET, run_timeout_s=10, code_max_duration_s=4.9).code_max_duration_s == 4.9
+    with pytest.raises(ValidationError):  # cả lượt có thể tốn tới 2 ngân sách
+        build_settings(shared_secret=SECRET, run_timeout_s=10, code_max_duration_s=5)
+
+
+@pytest.mark.parametrize("url", ["http://app:3000/prefix", "http://app:3000/api", "http://app/a/b/"])
+def test_app_internal_url_co_path_bi_tu_choi(url: str) -> None:
+    with pytest.raises(ValidationError):
+        build_settings(shared_secret=SECRET, app_internal_url=url)
+
+
+@pytest.mark.parametrize("url", ["http://app:3000", "http://app:3000/", "https://family.local"])
+def test_app_internal_url_goc_hop_le(url: str) -> None:
+    assert build_settings(shared_secret=SECRET, app_internal_url=url).app_internal_url == url

@@ -196,6 +196,7 @@ agent = Agent(
 - **Instructions:** vai trò + "trả lời ngắn, tiếng Việt"; "hôm nay là {today} ({weekday}), múi giờ Asia/Ho_Chi_Minh" (Monty không có `datetime.now()`); bảng thành viên + quan hệ (lấy sẵn ở đầu lượt); từ điển hạng mục chi; quy tắc "muốn thay đổi dữ liệu PHẢI dùng `propose_*`, không được nói là đã làm"; "xoá/sửa phải chỉ đúng bản ghi bằng id lấy từ tool đọc".
 - Output validator (như `_refuse_an_unstaged_change` của PTC): câu trả lời kiểu "đã thêm/đã xoá/đã tạo…" mà không có operation → `ModelRetry`.
 - Giới hạn: CodeMode `max_tool_calls=40`, `resource_limits` 15 s / 128 MiB mỗi snippet; một lượt ≤ 90 s; `UsageLimits(request_limit=6)`.
+- Monty chạy `run_code` **đồng bộ trên event loop** (phase 4): `CodeGuard` chỉ cho 1 `run_code`/phản hồi model, cấm `restart`, cộng dồn thời gian `run_code` cả lượt ≤ `AGENT_CODE_MAX_DURATION_S` (bắt buộc `2 × code < AGENT_RUN_TIMEOUT_S`) → `/health` không treo quá ~1 ngân sách. Chi tiết: phase 4 "Ghi chú triển khai".
 
 ## 8. Pha 0 — lọc quyền ở server (D4, làm ngay)
 
