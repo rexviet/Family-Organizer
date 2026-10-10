@@ -33,7 +33,7 @@ Thêm 6 tool đề xuất + bật 6 loại operation ở apply/preview. Hợp đ
 - [x] permissions task/plan (`canCreateTask/canDeleteTask/canCreatePlan/canEditPlan/canDeletePlan`; `canEditTask` có sẵn) — khoá ma trận endpoint gốc bằng test, `server.ts` POST/DELETE /api/plans gọi hàm mới
 - [x] 6 tool đề xuất (`tools/tasks.py`, `tools/plans.py`, phần chung `tools/records.py`) + ví dụ giao việc/dời lịch trong instructions
 - [x] apply + preview 6 loại (mutator dùng chung trong `dataMutations.ts`; FamilyDB tạo/xoá việc, tạo/sửa/xoá lịch gọi lại cùng mutator)
-- [ ] thử 10 câu Việc/Lịch với model thật — runner `agent/eval/phase8_smoke.py` đã sẵn, chạy khi router LLM bật
+- [ ] thử 10 câu Việc/Lịch với model thật — đã chạy qua OpenRouter (2026-10-10, [báo cáo](./reports/phase-08-real-model.md)) nhưng **chưa đo được**: `gemma-4-26b-a4b-it:free` 429 upstream liên tục (9/10 câu ở lượt 1); `mistral-nemo` 0/10 × 2 lượt vì không gọi tool (đối chứng phase 4 cũng 0 tool call) — lỗi model, không phải code; 0 request ghi. Cần chạy lại với model gọi tool tốt (deepseek-3.2 / claude-haiku-4.5) trước khi phát hành
 - [ ] phát hành 1.3.0 — CHANGELOG đã nháp; **chờ người dùng phát hành** (sau 1.2.0)
 
 ## Kết quả (2026-10-10)

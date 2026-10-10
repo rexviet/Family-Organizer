@@ -10,8 +10,12 @@ ghi lại để chứng minh agent không ghi gì (chỉ GET). Hôm nay: Thứ B
 
 from __future__ import annotations
 
+import argparse
 import asyncio
+import json
+import os
 import sys
+from pathlib import Path
 from typing import Any
 
 import phase4_smoke as base  # cùng thư mục eval/
@@ -66,5 +70,80 @@ base.CASES[:] = [
      lambda r: r.kind == "clarification" or (r.kind == "answer" and "?" in r.reply)),
 ]
 
+
+def _ops_note(r: Any) -> str:
+    """Tóm tắt operation (không chứa gì bí mật: chỉ dữ liệu giả của app giả)."""
+    out = []
+    for o in r.operations or []:
+        body = {k: v for k, v in o.items() if k not in ("type", "base")}
+        out.append(f"{o['type']} {json.dumps(body, ensure_ascii=False)}")
+    return " ; ".join(out)
+
+
+def _is_rate_limited(row: Any) -> bool:
+    return row.kind == "error" and ("429" in row.note or "rate" in row.note.lower())
+
+
+async def main() -> int:
+    """Như phase4_smoke.main nhưng: nghỉ giữa các câu, lùi + thử lại khi nhà cung cấp trả 429 (model miễn phí),
+    ghi chú operation thật, và đếm riêng lỗi do nhà cung cấp (429) với lỗi/sai của model."""
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--report", help="ghi bảng markdown vào file này")
+    ap.add_argument("--only", type=int, nargs="*", help="chỉ chạy các câu số này (1-10)")
+    ap.add_argument("--pause", type=float, default=6.0, help="giây nghỉ giữa các câu")
+    ap.add_argument("--retries", type=int, default=5, help="số lần thử lại khi gặp 429")
+    args = ap.parse_args()
+    need = ["AGENT_LLM_BASE_URL", "AGENT_LLM_API_KEY", "AGENT_LLM_MODEL"]
+    if any(not os.environ.get(k) for k in need):
+        print("Thiếu env:", ", ".join(need))
+        return 2
+    settings = base.Settings(AGENT_SHARED_SECRET="s" * 40)  # type: ignore[call-arg]
+    model = base.build_model(settings)
+    methods: list[str] = []
+    gets = [0]
+    rows: list[tuple[int, Any, int]] = []
+    for n, (q, kind, check) in enumerate(base.CASES, 1):
+        if args.only and n not in args.only:
+            continue
+        attempt = 0
+        while True:
+            row, r = await base.run_case(model, q, check, methods, gets)
+            if not _is_rate_limited(row) or attempt >= args.retries:
+                break
+            attempt += 1
+            wait = min(15 * 2 ** (attempt - 1), 120)
+            print(f"   429 nhà cung cấp — câu {n}, thử lại lần {attempt} sau {wait}s")
+            await asyncio.sleep(wait)
+        row.kind_expected = kind
+        if r is not None and r.operations:
+            row.note = _ops_note(r)
+        elif r is not None:
+            row.note = (r.question or r.reply).replace("\n", " ")[:140]
+            if r.options:
+                row.note += f" options={list(r.options)}"
+        rows.append((n, row, attempt))
+        print(f"{n:2} {'PASS' if row.ok else 'FAIL'} {kind:9} -> {row.kind:13} req={row.model_requests} "
+              f"tools={row.tool_calls} gets={row.app_gets} {row.seconds:5.1f}s retry429={attempt} | {row.note[:160]}")
+        await asyncio.sleep(args.pause)
+    passed = sum(r.ok for _, r, _ in rows)
+    provider = sum(1 for _, r, _ in rows if _is_rate_limited(r))
+    writes = [m for m in methods if m != "GET"]
+    print(f"TOTAL {passed}/{len(rows)}  model={settings.llm_model}  app_requests={len(methods)} writes={len(writes)} "
+          f"provider_429_unresolved={provider}")
+    if args.report:
+        lines = [
+            "| # | Câu hỏi | Kết quả | Kind | Model req | Tool call | GET app | Giây | Thử lại 429 | Ghi chú |",
+            "| :-- | :-- | :-- | :-- | --: | --: | --: | --: | --: | :-- |",
+        ]
+        for n, r, a in rows:
+            lines.append(f"| {n} | {r.question} | {'PASS' if r.ok else 'FAIL'} | {r.kind} | {r.model_requests} | "
+                         f"{r.tool_calls} | {r.app_gets} | {r.seconds:.1f} | {a} | {r.note.replace('|', '/')[:220]} |")
+        lines.append("")
+        lines.append(f"**Model `{settings.llm_model}`: {passed}/{len(rows)}** — request tới app: {len(methods)}, "
+                     f"method ≠ GET: {len(writes)}; còn 429 của nhà cung cấp sau khi thử lại: {provider}.")
+        Path(args.report).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return 0 if not writes else 1
+
+
 if __name__ == "__main__":
-    sys.exit(asyncio.run(base.main()))
+    sys.exit(asyncio.run(main()))
