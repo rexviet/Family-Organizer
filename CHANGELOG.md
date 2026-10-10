@@ -3,6 +3,24 @@
 Ghi theo phiên bản, mới nhất ở trên. Nội dung mục của từng phiên bản được dùng làm ghi chú
 hiển thị trong **Thiết lập → Hệ thống & Sao lưu → Phiên bản & Cập nhật**.
 
+## [1.2.0] - 2026-10-10
+
+### Mới
+- **Trợ lý nâng cao** (tùy chọn, Admin bật trong **Thiết lập → Hệ thống & Sao lưu → Trợ lý nâng cao**): hỏi trợ lý về dữ liệu thật của gia đình — Đi chợ, Việc, Lịch, Thu chi — kiểu "tuần này nhà mình tiêu bao nhiêu cho ăn uống?", "mai có lịch gì?".
+  - Nhờ trợ lý **thêm/sửa/xoá món Đi chợ**: trợ lý chỉ **đề xuất**, hiện thành thẻ để bạn xem từng thay đổi rồi bấm **Duyệt** — không bấm thì không có gì bị đổi.
+  - Chưa rõ ý thì trợ lý hỏi lại, kèm nút chọn nhanh.
+  - Mỗi người chỉ thấy và nhờ trợ lý làm những gì mình vốn được phép trong app.
+  - Chưa bật, hoặc trợ lý nâng cao tạm lỗi → app tự dùng trợ lý cũ như trước.
+- Trang **Cập nhật** báo nếu trợ lý nâng cao chưa chạy được sau khi cập nhật (app vẫn chạy bình thường).
+
+### Cần làm một lần trên Pi (chỉ khi muốn dùng Trợ lý nâng cao)
+- Cần một dịch vụ AI tương thích OpenAI (địa chỉ, khóa, tên model). Thêm các biến `AGENT_*` vào `.env` và service `family-organizer-agent` vào `docker-compose.yml` theo README, mục **Trợ lý nâng cao**. Không làm bước này thì mọi thứ vẫn như cũ.
+
+### Ghi chú
+- Dịch vụ cập nhật tự nâng cấp sau khi lên bản này. Từ lần cập nhật **kế tiếp**, nó cập nhật luôn cả trợ lý nâng cao cùng phiên bản với app; trợ lý lỗi không làm app bị quay về (trợ lý được giữ ở bản trước).
+- Cập nhật bị lỗi và tự quay về thì dịch vụ cập nhật giữ nguyên bản đang chạy của nó.
+- Quay về bản 1.1.0 trở về trước vẫn được — trợ lý nâng cao được giữ nguyên, bản cũ chỉ đơn giản không dùng tới.
+
 ## [1.1.0] - 2026-10-09
 
 ### Mới

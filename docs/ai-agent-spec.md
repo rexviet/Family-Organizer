@@ -74,6 +74,7 @@ Node: kiểm hash → kiểm quyền + guard từng operation → ghi qua Family
 ```
 
 - Service app thêm `AGENT_URL=http://family-organizer-agent:3100` và `AGENT_SHARED_SECRET`.
+- Bản cài riêng (repo): service nằm trong **profile `agent`** (bật bằng `COMPOSE_PROFILES=agent` trong `.env`); mạng `fo-agent` (internal, chỉ app + agent) + `fo-egress` (agent ra Internet); `cap_drop: [ALL]`, `no-new-privileges`. Đã triển khai ở phase 7.
 - **Không mount `data/`, không docker socket.** Agent không có đường nào tới DB ngoài API.
 - Không có agent (stack cũ chưa thêm service, hoặc env LLM trống) → app hiển thị "Trợ lý nâng cao chưa cấu hình" và dùng assistant cũ. `/api/health` của app **không** phụ thuộc agent.
 - Agent có `GET /health` → `{ok, llmConfigured, model, version}`; app hiện ở Thiết lập → AI (không bao giờ hiện key).
@@ -81,7 +82,7 @@ Node: kiểm hash → kiểm quyền + guard từng operation → ghi qua Family
 ### 3.2 Phát hành & cập nhật (hệ quả của D1)
 
 - `release.yml` build **2 image** arm64 cùng tag: `family-organizer` và `family-organizer-agent`.
-- `updater.sh`: thêm biến `AGENT_SERVICE` (mặc định `family-organizer-agent`). Khi cập nhật: nếu service này **có trong compose** (`dc config --services`) thì pull + `up -d` cả hai, chờ app healthy rồi chờ agent `/health`; rollback thì quay **cả hai** về bản cũ. Không có service → bỏ qua (tương thích stack cũ).
+- `updater.sh` (v3): thêm biến `AGENT_SERVICE` (mặc định `family-organizer-agent`). Khi cập nhật: nếu service này **có trong compose** (`dc config --services`) thì **sau khi app đã healthy** mới đặt `FAMILY_ORGANIZER_AGENT_VERSION`, pull + `up -d` agent và chờ HEALTHCHECK của container (≤ 120 s). App lỗi → app quay về, agent chưa bị đụng. Bản đích < `AGENT_MIN_VERSION` (1.2.0) → giữ agent (`agent=kept`). Không kéo được image agent → trả biến về như cũ. Không có service → bỏ qua (`agent=absent`).
   - Vẫn đúng ràng buộc CLAUDE.md: app chỉ gửi tên hành động; danh sách service cố định trong updater; **không sửa compose**.
   - Agent lỗi sau cập nhật **không** kéo app rollback (agent là tính năng phụ) — chỉ ghi cảnh báo vào `state.env`.
 - Thêm service vào compose của **liu-homelab** là việc **làm tay một lần** trên Pi; ghi hướng dẫn trong README + mục CHANGELOG của bản có agent.

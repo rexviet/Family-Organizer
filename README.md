@@ -156,6 +156,8 @@ Giao diện Neumorphism, hỗ trợ Light / Dark mode với hiệu ứng chuyể
 
 ### 🤖 Trợ Lý AI (Gemini)
 
+> Từ v1.2.0 có thêm **Trợ lý nâng cao** (AI agent, tùy chọn): hỏi đáp trên dữ liệu thật và đề xuất thay đổi để bạn **Duyệt** — xem [Trợ lý nâng cao](#-trợ-lý-nâng-cao-ai-agent--tùy-chọn-từ-v120).
+
 - Tích hợp **Google Gemini API** — Admin nhập key trong Settings (lưu trong `app_settings.json`, không vào backup)
 - Viết nháp ghi chú, gợi ý thực đơn, xử lý lệnh mua sắm bằng giọng nói
 - **Bản tin tuần** (Weekly Digest): sáng thứ Hai 7h–10h gửi Telegram — tóm tắt chi tiêu, task trễ/sắp hạn, lịch sự kiện, sinh nhật, giấy tờ sắp hết hạn; AI viết thân thiện nếu có Gemini key
@@ -315,6 +317,81 @@ cd ~/Family-Organizer && sed -i 's/^FAMILY_ORGANIZER_VERSION=.*/FAMILY_ORGANIZER
 → `npm run release -- X.Y.Z` → `git push && git push --tags`. GitHub Actions build image arm64 +
 tạo Release; app trên máy chủ thấy bản mới trong trang Cập nhật.
 
+### 🧠 Trợ lý nâng cao (AI agent — tùy chọn, từ v1.2.0)
+
+Container Python riêng (`family-organizer-agent`, mã nguồn [agent/](agent/README.md)) đọc dữ liệu
+Đi chợ, Việc, Lịch, Thu chi qua API của app và **chỉ đề xuất** thay đổi — người dùng bấm **Duyệt**
+thì app mới ghi. Không bật thì app dùng trợ lý cũ (Gemini) như trước. Agent không mở cổng, không
+mount `data/`, không cầm docker socket, chạy non-root; `mem_limit: 384m` (đo trên arm64: ~70 MiB
+lúc rảnh, đỉnh ~125 MiB).
+
+**1. Biến trong `.env`** (cạnh `docker-compose.yml`):
+
+```bash
+AGENT_SHARED_SECRET=<dán kết quả của: openssl rand -hex 32>   # ≥ 32 ký tự, dùng chung app ↔ agent
+AGENT_LLM_BASE_URL=https://api.openai.com/v1  # endpoint tương thích OpenAI có tool calling
+AGENT_LLM_API_KEY=sk-...
+AGENT_LLM_MODEL=<tên-model>                   # đổi model không cần build lại
+FAMILY_ORGANIZER_AGENT_VERSION=               # trống = latest; nút Cập nhật tự đổi — đừng sửa tay
+```
+
+**2a. Bản cài riêng** (repo này): dịch vụ cập nhật **không** thay `docker-compose.yml`, nên trước hết lấy
+file compose mới (`cd ~/Family-Organizer && git pull`, hoặc tải lại `docker-compose.yml` từ repo). Rồi thêm
+`COMPOSE_PROFILES=agent` vào **`.env` cạnh compose** (không export ở shell — dịch vụ cập nhật chỉ đọc `.env`)
+và `docker compose up -d`. Service agent nằm trong profile `agent` nên bản cài chưa bật không chạy container
+thiếu secret.
+
+**2b. Stack liu-homelab** (chung với Immich…): thêm **một lần, bằng tay** vào `docker-compose.yml`
+của stack (không cần profile):
+
+```yaml
+services:
+  family-organizer:
+    # … giữ nguyên, thêm:
+    environment:
+      - AGENT_URL=http://family-organizer-agent:3100
+      - AGENT_SHARED_SECRET=${AGENT_SHARED_SECRET:-}
+    networks: [default, fo-agent]   # giữ thêm các mạng service đang dùng (nếu có)
+
+  family-organizer-agent:
+    image: ghcr.io/happysmartlight/family-organizer-agent:${FAMILY_ORGANIZER_AGENT_VERSION:-latest}
+    container_name: family_organizer_agent
+    restart: unless-stopped
+    environment:
+      - AGENT_SHARED_SECRET=${AGENT_SHARED_SECRET:-}
+      - AGENT_LLM_BASE_URL=${AGENT_LLM_BASE_URL:-}
+      - AGENT_LLM_API_KEY=${AGENT_LLM_API_KEY:-}
+      - AGENT_LLM_MODEL=${AGENT_LLM_MODEL:-}
+      - APP_INTERNAL_URL=http://family-organizer:3000
+      - TZ=Asia/Ho_Chi_Minh
+    mem_limit: 384m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [fo-agent, fo-egress]
+
+networks:
+  fo-agent: { internal: true }   # chỉ app + agent — Immich, Home Assistant… không gọi được agent
+  fo-egress: {}                  # agent ra Internet tới LLM
+```
+
+Rồi `docker compose up -d family-organizer family-organizer-agent`. Nếu LLM chạy **trong cùng stack**
+(vd Ollama) thì thay `fo-egress` bằng mạng của service đó (vd `default`) và đặt
+`AGENT_LLM_BASE_URL=http://ollama:11434/v1` — agent khi đó không cần ra Internet.
+
+**3. Bật trong app:** Thiết lập → Hệ thống & Sao lưu → **Trợ lý nâng cao** (Admin) → bật công tắc,
+xem trạng thái (model, phiên bản; không bao giờ hiện key).
+
+**Cập nhật:** dịch vụ cập nhật (từ bản v3 của script) tự thấy service agent trong compose và, sau
+khi app mới đã khỏe, kéo + chạy agent cùng phiên bản. Agent lỗi **không** kéo app quay về — agent
+được đưa lại bản trước và trang Cập nhật hiện cảnh báo. Quay về bản cũ hơn 1.2.0 (chưa có agent)
+thì agent giữ nguyên bản đang chạy; khi đó dịch vụ cập nhật cũng về bản script cũ, nên lần cập nhật
+kế tiếp chỉ cập nhật app (agent lệch phiên bản một lượt — app tự lùi về trợ lý cũ nếu hợp đồng lệch),
+từ lần sau nữa lại cập nhật cả hai.
+
+**Model đã kiểm chứng** (10 câu thử, xem [agent/README.md](agent/README.md#model-đã-kiểm-chứng-spike-phase-1-báo-cáo)):
+`kr/deepseek-3.2` 10/10 (khuyến nghị), `kr/qwen3-coder-next` 8/10, `kr/claude-haiku-4.5` 7–9/10 (nhanh nhất),
+`kr/claude-sonnet-4.5` 7/10 — tên theo router tương thích OpenAI đã dùng khi thử; endpoint khác đặt tên khác.
+
 ---
 
 ## 💻 Môi Trường Dev (Local)
@@ -436,6 +513,10 @@ Các biến đặt trong file `.env` ở thư mục gốc (được `docker-comp
 | `VAPID_SUBJECT` | Không | Email liên hệ cho VAPID (dạng `mailto:you@example.com`) |
 | `APP_URL` | Không | URL ngoài của app — dùng cho deep-link trong thông báo đẩy |
 | `GITHUB_REPO` | Không | Repo GitHub để đọc danh sách bản phát hành (mặc định: `happysmartlight/Family-Organizer`) |
+| `COMPOSE_PROFILES` | Không | Đặt `agent` để chạy container Trợ lý nâng cao (bản cài riêng) |
+| `AGENT_SHARED_SECRET` | Khi bật agent | Khóa chung app ↔ agent, ≥ 32 ký tự (`openssl rand -hex 32`). Trống = tắt agent |
+| `AGENT_LLM_BASE_URL` / `AGENT_LLM_API_KEY` / `AGENT_LLM_MODEL` | Khi bật agent | Endpoint LLM tương thích OpenAI, khóa, tên model |
+| `FAMILY_ORGANIZER_AGENT_VERSION` | Không | Phiên bản image agent; trống = `latest`. Nút cập nhật tự đổi |
 
 > **Gemini key và cấu hình Telegram** được quản lý qua **Settings → Thiết lập AI / Telegram** trong giao diện — lưu vào `app_settings.json`, không vào backup. Biến môi trường `GEMINI_API_KEY` chỉ là fallback nếu chưa nhập qua UI.
 > **VAPID keys** tạo bằng: `npx web-push generate-vapid-keys`

@@ -57,6 +57,8 @@ interface UpdaterState {
   previous: string | null;
   finishedAt: number | null;
   scriptVersion: string | null;
+  /** Container agent sau lượt cập nhật gần nhất (updater ≥ v3) — null với updater cũ. */
+  agent?: "ok" | "failed" | "absent" | "kept" | null;
 }
 
 interface Snapshot {
@@ -100,6 +102,7 @@ const PHASE_LABEL: Record<string, string> = {
   restoring: "Đang khôi phục dữ liệu",
   restarting: "Đang khởi động lại",
   health: "Đang kiểm tra bản mới",
+  agent: "Đang cập nhật trợ lý nâng cao",
   rolling_back: "Bản mới lỗi — đang quay về bản cũ",
   done: "Xong",
   failed: "Thất bại",
@@ -108,7 +111,7 @@ const PHASE_LABEL: Record<string, string> = {
 };
 const IDLE_PHASES = ["idle", "done", "failed", "rolled_back", "unknown"];
 const STEPS = ["Sao lưu", "Tải bản mới", "Khởi động lại", "Kiểm tra", "Xong"];
-const PHASE_STEP: Record<string, number> = { prepare: 1, pulling: 1, restoring: 1, restarting: 2, health: 3, done: 4 };
+const PHASE_STEP: Record<string, number> = { prepare: 1, pulling: 1, restoring: 1, restarting: 2, health: 3, agent: 3, done: 4 };
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({ value: String(h), label: `${h}:00` }));
 
 function authHeaders(): Record<string, string> {
@@ -744,6 +747,12 @@ export function UpdatePanel({ isAdmin }: { isAdmin: boolean }) {
                     </b>
                     {u.finishedAt ? ` · ${fmtDateTime(u.finishedAt)}` : ""}
                     {u.message ? ` · ${u.message}` : ""}
+                  </p>
+                )}
+                {u?.agent === "failed" && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                    <span>Trợ lý nâng cao (agent) chưa lên được bản mới nên được giữ ở bản trước. App vẫn chạy bình thường; nếu trợ lý nâng cao không dùng được, app tự dùng trợ lý cũ — xem nhật ký.</span>
                   </p>
                 )}
               </div>

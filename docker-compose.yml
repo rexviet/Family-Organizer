@@ -4,6 +4,8 @@
 # .env cạnh file này cần có:
 #   STACK_DIR=<đường dẫn tuyệt đối tới thư mục này>   (vd /root/Family-Organizer)
 #   FAMILY_ORGANIZER_VERSION=<phiên bản>              (vd 1.0.0 — để trống = latest)
+# Trợ lý nâng cao (tùy chọn, từ v1.2.0): thêm COMPOSE_PROFILES=agent + AGENT_SHARED_SECRET
+# + 3 biến AGENT_LLM_* (xem .env.example và README mục "Trợ lý nâng cao").
 # Sau đó mọi cập nhật làm trong app: Thiết lập → Hệ thống & Sao lưu → Phiên bản & Cập nhật.
 
 services:
@@ -48,15 +50,60 @@ services:
       - VAPID_SUBJECT=${VAPID_SUBJECT:-}
       # Repo GitHub để app đọc danh sách bản phát hành.
       - GITHUB_REPO=${GITHUB_REPO:-happysmartlight/Family-Organizer}
+      # Trợ lý nâng cao (container family-organizer-agent). Secret trống = tắt, app
+      # dùng trợ lý cũ. Agent không chạy/không tới được → app cũng tự lùi về trợ lý cũ.
+      - AGENT_URL=${AGENT_URL:-http://family-organizer-agent:3100}
+      - AGENT_SHARED_SECRET=${AGENT_SHARED_SECRET:-}
+    networks:
+      - default
+      - fo-agent
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
+  # Trợ lý nâng cao (Python, Pydantic AI). CHỈ chạy khi bật profile: COMPOSE_PROFILES=agent
+  # trong .env — tránh container thiếu secret khởi động lỗi lặp lại ở bản cài chưa dùng agent.
+  # Không publish port, không mount data/, không docker socket: chỉ app gọi được, và agent
+  # chỉ đọc dữ liệu qua API của app bằng token ngắn hạn. Agent chỉ ĐỀ XUẤT, app mới ghi.
+  family-organizer-agent:
+    # Biến phiên bản RIÊNG: dịch vụ cập nhật chỉ đổi biến này khi bản đích có image agent
+    # (≥ 1.2.0) → "Quay về" bản cũ không làm compose trỏ tới tag agent không tồn tại.
+    image: ghcr.io/happysmartlight/family-organizer-agent:${FAMILY_ORGANIZER_AGENT_VERSION:-latest}
+    build:
+      context: ./agent
+      args:
+        AGENT_VERSION: ${APP_VERSION:-dev}
+    profiles: ["agent"]
+    container_name: family_organizer_agent
+    restart: unless-stopped
+    environment:
+      - AGENT_SHARED_SECRET=${AGENT_SHARED_SECRET:-}
+      - AGENT_LLM_BASE_URL=${AGENT_LLM_BASE_URL:-}
+      - AGENT_LLM_API_KEY=${AGENT_LLM_API_KEY:-}
+      - AGENT_LLM_MODEL=${AGENT_LLM_MODEL:-}
+      - APP_INTERNAL_URL=http://family-organizer:3000
+      - TZ=Asia/Ho_Chi_Minh
+    # Đo trên arm64 (spike phase 1): đỉnh 101–123 MiB. 384m chừa chỗ cho Pi (trang 16 KiB).
+    mem_limit: 384m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      # fo-agent: mạng nội bộ chỉ app + agent (service khác trong stack không gọi được agent).
+      # fo-egress: để agent ra Internet tới endpoint LLM.
+      - fo-agent
+      - fo-egress
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
   # Nút "Cập nhật" trong app. Container này cầm docker socket (quyền ngang root)
   # nên KHÔNG mở cổng mạng nào: chỉ đọc file yêu cầu trong data/update/ và chỉ
-  # đụng tới service family-organizer. Script tự tải lần đầu, sau đó tự thay
+  # đụng tới service family-organizer (và family-organizer-agent nếu có). Script tự tải lần đầu, sau đó tự thay
   # bằng bản đi kèm mỗi phiên bản mới.
   family-organizer-updater:
     image: docker:28-cli
@@ -89,3 +136,8 @@ services:
       options:
         max-size: "2m"
         max-file: "2"
+
+networks:
+  fo-agent:
+    internal: true
+  fo-egress: {}

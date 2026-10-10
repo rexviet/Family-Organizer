@@ -29,3 +29,24 @@ jobs:
         run: python3 agent/contracts/gen_vectors.py --check
       - name: Kiểm tra cú pháp shell
         run: sh -n deploy/updater.sh && bash -n scripts/release.sh
+      - name: Kiểm tra docker-compose.yml (có và không bật profile agent)
+        run: |
+          STACK_DIR=/tmp/fo docker compose -f docker-compose.yml config -q
+          STACK_DIR=/tmp/fo COMPOSE_PROFILES=agent docker compose -f docker-compose.yml config -q
+
+  # Dịch vụ agent (Python). Không chạy eval (cần LLM thật).
+  agent:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: agent/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check
+      - run: uv run mypy src
+      - run: uv run pytest

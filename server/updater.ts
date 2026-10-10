@@ -181,7 +181,16 @@ export interface UpdaterState {
   action: string | null;
   /** Service Immich updater được phép cập nhật (rỗng = stack không có Immich / updater cũ). */
   immichServices: string[];
+  /**
+   * Container agent ở lượt cập nhật gần nhất (updater ≥ v3): ok | failed (app vẫn chạy, trợ lý
+   * nâng cao có thể không dùng được) | absent (stack không có agent) | kept (bản đích cũ hơn bản
+   * đầu tiên có agent → giữ agent hiện tại). null = updater cũ / chưa cập nhật lần nào.
+   */
+  agent: AgentUpdateStatus | null;
 }
+
+export type AgentUpdateStatus = "ok" | "failed" | "absent" | "kept";
+const AGENT_STATUSES: readonly string[] = ["ok", "failed", "absent", "kept"];
 
 const IDLE_PHASES = ["idle", "done", "failed", "rolled_back", "unknown"];
 
@@ -205,7 +214,8 @@ export function readUpdaterState(): UpdaterState {
     finishedAt: kv.finished_at ? Number(kv.finished_at) * 1000 : null,
     scriptVersion: kv.script_version || null,
     action: kv.action || null,
-    immichServices: (kv.immich || "").split(" ").filter(Boolean)
+    immichServices: (kv.immich || "").split(" ").filter(Boolean),
+    agent: AGENT_STATUSES.includes(kv.agent) ? (kv.agent as AgentUpdateStatus) : null
   };
 }
 

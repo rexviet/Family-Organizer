@@ -1,6 +1,6 @@
 name: Release
 
-# Tạo tag vX.Y.Z → build image arm64 cho Pi 5 → đẩy lên GHCR → tạo GitHub Release
+# Tạo tag vX.Y.Z → build 2 image arm64 cho Pi 5 (app + agent, cùng tag) → đẩy lên GHCR → tạo GitHub Release
 # với ghi chú lấy từ CHANGELOG.md. App trên Pi thấy bản mới trong
 # Thiết lập → Hệ thống & Sao lưu → Phiên bản & Cập nhật.
 #   npm run release -- 1.1.0     (xem scripts/release.sh)
@@ -13,10 +13,6 @@ on:
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
-
-env:
-  # GHCR bắt buộc chữ thường (tên repo GitHub có chữ hoa).
-  IMAGE: ghcr.io/happysmartlight/family-organizer
 
 jobs:
   image:
@@ -39,6 +35,10 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "minor=$(echo "$VERSION" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
           echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          # GHCR bắt buộc chữ thường; owner lấy từ repo để fork cũng phát hành được.
+          OWNER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          echo "image=ghcr.io/$OWNER/family-organizer" >> "$GITHUB_OUTPUT"
+          echo "agent_image=ghcr.io/$OWNER/family-organizer-agent" >> "$GITHUB_OUTPUT"
 
       - name: Ghi chú phát hành từ CHANGELOG.md
         run: |
@@ -59,6 +59,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Image agent cùng tag với app, build TRƯỚC: agent lỗi build thì chưa có tag app nào
+      # được đẩy (app trên Pi không thấy bản mới thiếu agent). Dịch vụ cập nhật đổi
+      # FAMILY_ORGANIZER_AGENT_VERSION sang tag này (chỉ với bản ≥ 1.2.0).
+      - name: Build & push agent (arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: agent
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ steps.v.outputs.agent_image }}:${{ steps.v.outputs.version }}
+            ${{ steps.v.outputs.agent_image }}:${{ steps.v.outputs.minor }}
+            ${{ steps.v.outputs.agent_image }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.v.outputs.version }}
+          cache-from: type=gha,scope=agent
+          cache-to: type=gha,mode=max,scope=agent
+          build-args: |
+            AGENT_VERSION=${{ steps.v.outputs.version }}
+
       - name: Build & push (Raspberry Pi 5 = arm64)
         uses: docker/build-push-action@v6
         with:
@@ -66,9 +87,9 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: |
-            ${{ env.IMAGE }}:${{ steps.v.outputs.version }}
-            ${{ env.IMAGE }}:${{ steps.v.outputs.minor }}
-            ${{ env.IMAGE }}:latest
+            ${{ steps.v.outputs.image }}:${{ steps.v.outputs.version }}
+            ${{ steps.v.outputs.image }}:${{ steps.v.outputs.minor }}
+            ${{ steps.v.outputs.image }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.v.outputs.version }}
@@ -78,6 +99,18 @@ jobs:
             APP_VERSION=${{ steps.v.outputs.version }}
             GIT_SHA=${{ github.sha }}
             BUILD_TIME=${{ steps.v.outputs.time }}
+
+      # Pi kéo image KHÔNG đăng nhập. Package GHCR mới tạo mặc định là private → lần phát
+      # hành đầu có image agent: vào GitHub → Packages → family-organizer-agent → Package
+      # settings → Change visibility → Public, rồi chạy lại job này. Chặn ở đây để không tạo
+      # Release (app không báo bản mới) khi Pi chưa kéo được image.
+      - name: Kiểm image kéo được không cần đăng nhập
+        run: |
+          docker logout ghcr.io
+          for img in "${{ steps.v.outputs.image }}" "${{ steps.v.outputs.agent_image }}"; do
+            docker manifest inspect "$img:${{ steps.v.outputs.version }}" >/dev/null \
+              || { echo "::error::$img:${{ steps.v.outputs.version }} chưa public — đổi package sang Public rồi chạy lại"; exit 1; }
+          done
 
       - name: GitHub Release
         uses: softprops/action-gh-release@v2

@@ -4,6 +4,7 @@ Dịch vụ trợ lý AI (Python, Pydantic AI + CodeMode) chạy cạnh app Node
 Agent **chỉ đề xuất** — mọi thay đổi dữ liệu do Node ghi sau khi người dùng Duyệt.
 
 > Trạng thái: phase 4 — agent thật với 9 tool đọc, `ask_user` và 3 tool đề xuất đi chợ. Tool đề xuất Việc/Lịch/Thu chi: phase 8–9.
+> Triển khai (compose, biến `.env`, stack liu-homelab, cập nhật): [README gốc → Trợ lý nâng cao](../README.md#-trợ-lý-nâng-cao-ai-agent--tùy-chọn-từ-v120).
 
 ## Endpoint
 

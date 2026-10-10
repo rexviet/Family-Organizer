@@ -67,6 +67,20 @@ describe("hộp thư với dịch vụ cập nhật", () => {
     expect(m.readUpdaterState()).toMatchObject({ alive: true, phase: "idle", requestId: "r1", result: "ok" });
   });
 
+  it("trạng thái agent (updater v3): ok/failed/absent/kept; updater cũ hoặc giá trị lạ → null", async () => {
+    const m = await load();
+    writeState({ heartbeat: now(), phase: "idle", script_version: 2 });
+    expect(m.readUpdaterState().agent).toBeNull();
+    for (const v of ["ok", "failed", "absent", "kept"]) {
+      writeState({ heartbeat: now(), phase: "idle", script_version: 3, agent: v });
+      expect(m.readUpdaterState().agent).toBe(v);
+    }
+    writeState({ heartbeat: now(), phase: "idle", script_version: 3, agent: "rm -rf" });
+    expect(m.readUpdaterState().agent).toBeNull();
+    writeState({ heartbeat: now(), phase: "idle", script_version: 3, agent: "failed" });
+    expect(m.getUpdateOverview().updater.agent).toBe("failed");
+  });
+
   it("khởi động lại: từ chối khi updater không chạy hoặc đang bận, ghi request.env khi rảnh", async () => {
     const m = await load();
     expect(() => m.requestRestart()).toThrow(/không chạy/);

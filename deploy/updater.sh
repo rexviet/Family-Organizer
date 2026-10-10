@@ -15,6 +15,11 @@
 # (vd liu-homelab có cả Immich, Home Assistant…) mà không ảnh hưởng service khác.
 # Hành động "immich": pull + up -d các service Immich trong cùng stack (danh sách
 # cố định qua IMMICH_SERVICES, app không chọn được service nào khác).
+# Container agent (trợ lý nâng cao, từ v1.2.0): nếu service AGENT_SERVICE có trong
+# compose thì sau khi app đã khỏe, kéo + chạy agent cùng phiên bản (biến riêng
+# AGENT_VERSION_VAR). Agent lỗi KHÔNG kéo app quay về — chỉ ghi agent=failed.
+# Bản đích cũ hơn AGENT_MIN_VERSION (chưa có image agent) → giữ nguyên agent, để
+# compose không bao giờ trỏ tới tag agent không tồn tại (pull cả stack sẽ lỗi).
 # Viết sh thuần (busybox), không cần jq/curl.
 #
 # Biến môi trường:
@@ -25,10 +30,13 @@
 #   VERSION_VAR  biến trong .env chọn tag image (mặc định FAMILY_ORGANIZER_VERSION)
 #   IMMICH_SERVICES  service Immich được phép cập nhật (mặc định immich-server
 #                immich-machine-learning; chỉ bật nếu stack thật sự có; đặt rỗng để tắt)
+#   AGENT_SERVICE      service agent (mặc định family-organizer-agent; đặt rỗng để tắt)
+#   AGENT_VERSION_VAR  biến trong .env chọn tag image agent (mặc định FAMILY_ORGANIZER_AGENT_VERSION)
+#   AGENT_MIN_VERSION  bản đầu tiên có image agent (mặc định 1.2.0)
 # ═══════════════════════════════════════════════════════════════════
 set -u
 
-SCRIPT_VERSION=2
+SCRIPT_VERSION=3
 SELF="$0"
 STACK="${STACK_DIR:?Thiếu STACK_DIR}"
 DATA="${APP_DATA:-$STACK/data}"
@@ -48,6 +56,12 @@ IMMICH_SERVICES="${IMMICH_SERVICES-immich-server immich-machine-learning}"
 # Immich có thể chạy migration DB lâu sau khi lên bản mới.
 IMMICH_HEALTH_TIMEOUT="${IMMICH_HEALTH_TIMEOUT:-900}"
 IMMICH=""
+AGENT_SERVICE="${AGENT_SERVICE-family-organizer-agent}"
+AGENT_VERSION_VAR="${AGENT_VERSION_VAR:-FAMILY_ORGANIZER_AGENT_VERSION}"
+AGENT_MIN_VERSION="${AGENT_MIN_VERSION:-1.2.0}"
+AGENT_HEALTH_TIMEOUT="${AGENT_HEALTH_TIMEOUT:-120}"
+# Agent ở lượt cập nhật gần nhất: ok | failed | absent | kept (rỗng = chưa biết).
+AGENT=""
 
 mkdir -p "$UPD"
 chown "$PUID:$PGID" "$UPD" 2>/dev/null || true
@@ -66,6 +80,7 @@ if [ -f "$STATE" ]; then
   MESSAGE="$(sed -n 's/^message=//p' "$STATE")"
   PREVIOUS="$(sed -n 's/^previous=//p' "$STATE")"
   FINISHED="$(sed -n 's/^finished_at=//p' "$STATE")"
+  AGENT="$(sed -n 's/^agent=//p' "$STATE")"
 fi
 
 dc() { docker compose --project-directory "$STACK" -f "$STACK/docker-compose.yml" "$@"; }
@@ -99,6 +114,7 @@ write_state() {
     echo "finished_at=$FINISHED"
     echo "script_version=$SCRIPT_VERSION"
     echo "immich=$IMMICH"
+    echo "agent=$AGENT"
   } >"$tmp" && chmod 644 "$tmp" && mv -f "$tmp" "$STATE"
 }
 
@@ -155,10 +171,12 @@ restore_db() {
 }
 
 # Giữ image của bản đang chạy + bản trước (để quay về nhanh), xóa các bản cũ hơn.
+# prune_images <service> <tag giữ 1> <tag giữ 2>
 prune_images() {
-  keep_a="$1"
-  keep_b="$2"
-  cid="$(dc ps -q "$SERVICE" 2>/dev/null | head -n 1)"
+  svc="$1"
+  keep_a="$2"
+  keep_b="$3"
+  cid="$(dc ps -q "$svc" 2>/dev/null | head -n 1)"
   [ -n "$cid" ] || return 0
   img="$(docker inspect -f '{{.Config.Image}}' "$cid" 2>/dev/null)"
   repo="${img%:*}"
@@ -203,6 +221,91 @@ immich_wait() {
     sleep 5
   done
   return 1
+}
+
+# Service agent có trong compose (stack cũ chưa thêm, hoặc profile chưa bật → không).
+has_agent() {
+  [ -n "$AGENT_SERVICE" ] || return 1
+  dc config --services 2>/dev/null | grep -qx "$AGENT_SERVICE"
+}
+
+# ver_ge A B: A >= B theo số major.minor.patch (bỏ hậu tố -rc…). "latest" luôn đủ.
+ver_ge() {
+  [ "$1" = latest ] && return 0
+  awk -v a="${1%%-*}" -v b="${2%%-*}" 'BEGIN {
+    split(a, x, "."); split(b, y, ".")
+    for (i = 1; i <= 3; i++) { if (x[i] + 0 > y[i] + 0) exit 0; if (x[i] + 0 < y[i] + 0) exit 1 }
+    exit 0
+  }'
+}
+
+# Chờ container agent healthy theo HEALTHCHECK của image (gọi /health bên trong).
+agent_wait() {
+  deadline=$(($(date +%s) + AGENT_HEALTH_TIMEOUT))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    cid="$(dc ps -q "$AGENT_SERVICE" 2>/dev/null | head -n 1)"
+    if [ -n "$cid" ]; then
+      st="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$cid" 2>/dev/null)"
+      case "$st" in
+        # running = image không có HEALTHCHECK (bản build tay) → chạy là đủ.
+        healthy | running) return 0 ;;
+        unhealthy | exited | dead)
+          log "$AGENT_SERVICE: $st"
+          return 1
+          ;;
+      esac
+      restarts="$(docker inspect -f '{{.RestartCount}}' "$cid" 2>/dev/null || echo 0)"
+      if [ "${restarts:-0}" -ge 3 ]; then
+        log "$AGENT_SERVICE khởi động lỗi liên tục ($restarts lần)"
+        return 1
+      fi
+    fi
+    sleep 3
+  done
+  log "$AGENT_SERVICE chưa healthy sau ${AGENT_HEALTH_TIMEOUT}s"
+  return 1
+}
+
+# Đưa agent lên cùng phiên bản app (gọi khi app ĐÃ khỏe). Đặt AGENT; không bao giờ
+# làm hỏng lượt cập nhật app. Chỉ đụng service $AGENT_SERVICE (danh sách cố định).
+update_agent() {
+  want="$1"
+  if ! has_agent; then
+    AGENT=absent
+    return 0
+  fi
+  if ! ver_ge "$want" "$AGENT_MIN_VERSION"; then
+    AGENT=kept
+    log "v$want chưa có trợ lý nâng cao (từ v$AGENT_MIN_VERSION) — giữ $AGENT_SERVICE ở bản hiện tại"
+    return 0
+  fi
+  PHASE=agent
+  write_state
+  agent_raw="$(env_get "$AGENT_VERSION_VAR")"
+  agent_prev="${agent_raw:-latest}"
+  env_set "$AGENT_VERSION_VAR" "$want"
+  log "--- docker compose pull $AGENT_SERVICE ---"
+  if ! dc pull "$AGENT_SERVICE" >>"$LOG" 2>&1; then
+    # Trả biến về như cũ: không để compose trỏ tới tag agent không có.
+    env_set "$AGENT_VERSION_VAR" "$agent_raw"
+    AGENT=failed
+    log "Không tải được image agent v$want — giữ agent bản $agent_prev"
+    return 0
+  fi
+  log "--- docker compose up -d $AGENT_SERVICE ---"
+  if dc up -d --no-deps "$AGENT_SERVICE" >>"$LOG" 2>&1 && agent_wait; then
+    AGENT=ok
+    log "Trợ lý nâng cao đã lên v$want"
+    prune_images "$AGENT_SERVICE" "$want" "$agent_prev"
+  else
+    AGENT=failed
+    dc logs --tail 30 "$AGENT_SERVICE" >>"$LOG" 2>&1
+    # Quay agent về bản trước (image còn nguyên: chỉ dọn image khi thành công).
+    log "Trợ lý nâng cao v$want chưa chạy được — quay agent về bản $agent_prev (app vẫn chạy)"
+    env_set "$AGENT_VERSION_VAR" "$agent_raw"
+    dc up -d --no-deps "$AGENT_SERVICE" >>"$LOG" 2>&1 || log "Không chạy lại được agent bản $agent_prev"
+  fi
+  return 0
 }
 
 finish() {
@@ -322,10 +425,17 @@ do_update() {
   PHASE=health
   write_state
   if health_wait "$target"; then
-    prune_images "$target" "$PREVIOUS"
-    finish ok "Đã lên v$target" done
+    prune_images "$SERVICE" "$target" "$PREVIOUS"
+    update_agent "$target"
+    if [ "$AGENT" = failed ]; then
+      finish ok "Đã lên v$target (trợ lý nâng cao chưa lên được bản mới — xem nhật ký)" done
+    else
+      finish ok "Đã lên v$target" done
+    fi
   else
     log "Bản v$target không khởi động được — quay về v$PREVIOUS"
+    # Agent chỉ được đụng tới SAU khi app khỏe → ở đây agent vẫn nguyên bản cũ.
+    if has_agent; then AGENT=kept; else AGENT=absent; fi
     PHASE=rolling_back
     write_state
     dc logs --tail 40 "$SERVICE" >>"$LOG" 2>&1
@@ -340,8 +450,9 @@ do_update() {
     fi
   fi
 
-  # 5. Script updater mới đi kèm → thay rồi nạp lại chính mình.
-  if [ -n "$script" ] && [ -f "$DATA/$script" ] && ! cmp -s "$DATA/$script" "$SELF"; then
+  # 5. Script updater mới đi kèm → thay rồi nạp lại chính mình. Chỉ khi đã lên được
+  #    bản đích: bản lỗi/đã quay về thì giữ script đang chạy.
+  if [ "$RESULT" = ok ] && [ -n "$script" ] && [ -f "$DATA/$script" ] && ! cmp -s "$DATA/$script" "$SELF"; then
     if head -n 1 "$DATA/$script" | grep -q '^#!/bin/sh' && sh -n "$DATA/$script" 2>>"$LOG"; then
       cp -f "$DATA/$script" "$SELF.new" && mv -f "$SELF.new" "$SELF"
       log "Dịch vụ cập nhật có bản mới — nạp lại"
@@ -367,7 +478,8 @@ if [ -f "$WORK" ]; then
   FINISHED="$(date +%s)"
 fi
 write_state
-echo "updater: sẵn sàng (v$SCRIPT_VERSION), stack $STACK, data $DATA, service $SERVICE${IMMICH:+, immich: $IMMICH}"
+has_agent && agent_note=", agent: $AGENT_SERVICE" || agent_note=""
+echo "updater: sẵn sàng (v$SCRIPT_VERSION), stack $STACK, data $DATA, service $SERVICE${IMMICH:+, immich: $IMMICH}$agent_note"
 
 last=0
 while :; do
@@ -376,6 +488,8 @@ while :; do
     REQ_ID="$(req_get id)"
     action="$(req_get action)"
     LAST_ACTION="$action"
+    # Trạng thái agent chỉ thuộc về lượt cập nhật vừa chạy (restart/immich → trống).
+    AGENT=""
     case "$action" in
       update) do_update ;;
       restart) do_restart ;;
