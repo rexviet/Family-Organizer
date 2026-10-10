@@ -323,13 +323,19 @@ describe("lỗi bất ngờ trong route async", () => {
 });
 
 describe("sau review", () => {
-  it("M1: đề xuất loại chưa bật (task/finance) → không lưu, không dựng preview, trả answer", async () => {
-    runImpl = async () => answer("x", { kind: "proposal", operations: [{ type: "finance.delete", txId: "tx_1", base: { fingerprint: "a".repeat(64) } }] });
+  it("M3: đề xuất thu chi được lưu + dựng preview (số tiền đầy đủ)", async () => {
+    runImpl = async () => answer("x", { kind: "proposal", operations: [{ type: "finance.create", txType: "expense", amount: 250000, category: "food", date: "2026-10-10", description: "Đi chợ" }] });
+    const r = await ask("ghi chi 250k đi chợ");
+    expect(r.body.kind).toBe("proposal");
+    expect(r.body.proposal.preview[0].text).toContain("250.000₫");
+  });
+
+  it("đề xuất sai hợp đồng → không lưu, không dựng preview, trả answer", async () => {
+    runImpl = async () => answer("x", { kind: "proposal", operations: [{ type: "finance.delete", txId: "tx_1" }] });
     const r = await ask("xoá khoản chi");
     expect(r.body.kind).toBe("answer");
     expect(r.body.proposal).toBeUndefined();
     expect(previewViewers).toEqual([]);
-    expect(r.body.reply).toContain("Thu chi");
   });
 
   it("M2: đề xuất việc/lịch được lưu + dựng preview", async () => {

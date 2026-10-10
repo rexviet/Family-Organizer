@@ -170,12 +170,6 @@ describe("applyProposal", () => {
     expect(mem.shoppingItems).toHaveLength(32);
   });
 
-  it("loại operation chưa bật (thu chi — M3) → 501, không ghi", () => {
-    const p = propose([{ type: "finance.create", txType: "expense", amount: 1000, category: "food", date: "2026-10-10", description: "x" }]);
-    expect(applyProposal(deps, p.id, p.planHash, me)).toMatchObject({ status: 501, code: "unsupported" });
-    expect(writes).toBe(0);
-  });
-
   it("operations trong DB bị sửa (hash lưu không khớp nội dung) → 409", () => {
     const ops: AgentOperation[] = [{ type: "shopping.add", items: [{ name: "x" }] }];
     const p = store.createProposal({ conversationId: "c1", userId: "u1", operations: ops, planHash: "f".repeat(64), preview: [] }, T0);

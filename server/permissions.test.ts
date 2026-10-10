@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from "vitest";
 import {
+  canWriteFinance,
   canEditTask, sanitizeTaskWrite, canCreateTask, canDeleteTask, canCreatePlan, canEditPlan, canDeletePlan,
 } from "./permissions.js";
 import { UserRole } from "../src/types.js";
@@ -126,5 +127,12 @@ describe("quyền Việc/Lịch theo vai trò (khớp endpoint gốc)", () => {
     expect(canEditPlan(undefined, M)).toBe(true);
     expect(canDeletePlan(null, C)).toBe(true);
     expect(canDeletePlan(undefined, G)).toBe(false);
+  });
+});
+
+describe("canWriteFinance (khớp requireRole của POST/DELETE /api/finance)", () => {
+  it("chỉ Admin/Thành viên", () => {
+    const at = (role: UserRole) => canWriteFinance({ role, userId: "u" });
+    expect([UserRole.ADMIN, UserRole.MEMBER, UserRole.CHILD, UserRole.GUEST].map(at)).toEqual([true, true, false, false]);
   });
 });

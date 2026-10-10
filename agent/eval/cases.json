@@ -1,0 +1,768 @@
+{
+ "_comment": "Bộ câu eval phase 9 — xem docstring eval/run_eval.py để biết luật chấm. Hôm nay Thứ Bảy 2026-10-10; người hỏi mặc định Mẹ Lan (m2, member).",
+ "cases": [
+  {
+   "id": "R01",
+   "category": "read",
+   "question": "Hôm nay bé Na có những việc gì?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "đánh răng",
+     "toán"
+    ]
+   }
+  },
+  {
+   "id": "R02",
+   "category": "read",
+   "question": "Ai đang có nhiều việc chưa xong nhất?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "na"
+    ]
+   }
+  },
+  {
+   "id": "R03",
+   "category": "read",
+   "question": "Trong danh sách đi chợ còn thiếu gì?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "sữa",
+     "dầu",
+     "trứng"
+    ],
+    "not_words": [
+     "gạo"
+    ]
+   }
+  },
+  {
+   "id": "R04",
+   "category": "read",
+   "question": "Nhà mình có mấy thành viên và ai là trẻ em?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "na",
+     "bin"
+    ],
+    "numbers": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "R05",
+   "category": "read",
+   "question": "Việc nào của mẹ Lan hạn trong tuần này?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "tiền điện"
+    ],
+    "not_words": [
+     "họp phụ huynh"
+    ]
+   }
+  },
+  {
+   "id": "R06",
+   "category": "read",
+   "question": "Tháng này nhà mình chi tổng cộng bao nhiêu?",
+   "user": "m2",
+   "expect": {
+    "numbers": [
+     2720000
+    ]
+   }
+  },
+  {
+   "id": "R07",
+   "category": "read",
+   "question": "Tháng này nhà mình thu được bao nhiêu tiền?",
+   "user": "m2",
+   "expect": {
+    "numbers": [
+     15000000
+    ]
+   }
+  },
+  {
+   "id": "R08",
+   "category": "read",
+   "question": "Tháng này tiền ăn uống hết bao nhiêu?",
+   "user": "m2",
+   "expect": {
+    "numbers": [
+     370000
+    ]
+   }
+  },
+  {
+   "id": "R09",
+   "category": "read",
+   "question": "Tuần này nhà mình chi bao nhiêu tiền?",
+   "user": "m2",
+   "expect": {
+    "numbers": [
+     1520000
+    ]
+   }
+  },
+  {
+   "id": "R10",
+   "category": "read",
+   "question": "Khoản chi lớn nhất tháng này là khoản nào?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "tiêm phòng"
+    ],
+    "numbers": [
+     1200000
+    ]
+   }
+  },
+  {
+   "id": "R11",
+   "category": "read",
+   "question": "Ngân sách ăn uống tháng này còn lại bao nhiêu?",
+   "user": "m2",
+   "expect": {
+    "numbers": [
+     2630000
+    ]
+   }
+  },
+  {
+   "id": "R12",
+   "category": "read",
+   "question": "Tuần sau nhà mình có lịch gì?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "họp lớp",
+     "piano"
+    ]
+   }
+  },
+  {
+   "id": "R13",
+   "category": "read",
+   "question": "Sinh nhật bà vào ngày nào?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     [
+      "20/10",
+      "20-10",
+      "ngày 20",
+      "20 tháng 10"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R14",
+   "category": "read",
+   "question": "Có hoá đơn định kỳ nào sắp đến hạn không?",
+   "user": "m2",
+   "expect": {
+    "words": [
+     "internet"
+    ]
+   }
+  },
+  {
+   "id": "R15",
+   "category": "read",
+   "question": "Tiêm phòng cho mèo hết bao nhiêu tiền?",
+   "user": "m2",
+   "expect": {
+    "numbers": [
+     1200000
+    ]
+   }
+  },
+  {
+   "id": "S01",
+   "category": "write",
+   "question": "Thêm sữa chua và 2 chục trứng vào danh sách đi chợ",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "shopping.add",
+      "items~": [
+       "sữa chua",
+       "trứng"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "S02",
+   "category": "write",
+   "question": "Mai đi chợ nhớ mua rau muống với cà chua giúp mình",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "shopping.add",
+      "items~": [
+       "rau muống",
+       "cà chua"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "S03",
+   "category": "write",
+   "question": "Mua được dầu ăn rồi nhé",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "shopping.set_purchased",
+      "itemId": "s3",
+      "purchased": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "S04",
+   "category": "write",
+   "question": "Xoá trứng khỏi danh sách đi chợ",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "shopping.delete",
+      "itemId": "s4"
+     }
+    ]
+   }
+  },
+  {
+   "id": "T01",
+   "category": "write",
+   "question": "Giao bé Bin cho mèo ăn lúc 6 giờ tối mai",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.create",
+      "assigneeId": "m4",
+      "dueDate": "2026-10-11 18:00"
+     }
+    ]
+   }
+  },
+  {
+   "id": "T02",
+   "category": "write",
+   "question": "Tạo việc mua quà sinh nhật bà, hạn thứ Sáu tuần sau",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.create",
+      "title~": "quà",
+      "dueDate^": "2026-10-16"
+     }
+    ]
+   }
+  },
+  {
+   "id": "T03",
+   "category": "write",
+   "question": "Dời việc sửa vòi nước sang thứ Hai tuần sau",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.update",
+      "taskId": "t7",
+      "changes": {
+       "dueDate^": "2026-10-12"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "T04",
+   "category": "write",
+   "question": "Chuyển việc dọn phòng cho bé Bin",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.update",
+      "taskId": "t3",
+      "changes": {
+       "assigneeId": "m4"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "T05",
+   "category": "write",
+   "question": "Xoá việc họp phụ huynh",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.delete",
+      "taskId": "t6"
+     }
+    ]
+   }
+  },
+  {
+   "id": "T06",
+   "category": "write",
+   "question": "Bé Na đang làm bài tập toán rồi, cập nhật giúp mình",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.update",
+      "taskId": "t2",
+      "changes": {
+       "status": "in_progress"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "P01",
+   "category": "write",
+   "question": "Thêm lịch khám răng cho bé Na 9 giờ sáng thứ Bảy tuần sau",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "plan.create",
+      "startDate": "2026-10-17 09:00"
+     }
+    ]
+   }
+  },
+  {
+   "id": "P02",
+   "category": "write",
+   "question": "Dời buổi họp lớp sang 3 giờ chiều mai",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "plan.update",
+      "planId": "p1",
+      "changes": {
+       "startDate": "2026-10-11 15:00",
+       "endDate?": "2026-10-11 17:00"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "P03",
+   "category": "write",
+   "question": "Huỷ lịch đi bơi chủ nhật này",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "plan.delete",
+      "planId": "p2"
+     }
+    ]
+   }
+  },
+  {
+   "id": "P04",
+   "category": "write",
+   "question": "Thêm lịch tập võ cho bé Bin mỗi thứ Ba và thứ Năm lúc 5 giờ chiều, bắt đầu từ tuần sau",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "plan.create",
+      "recurrenceType": "weekly",
+      "recurrenceWeekdays": [
+       2,
+       4
+      ],
+      "startDate$": "17:00",
+      "startDate^": "2026-10-1"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F01",
+   "category": "write",
+   "question": "Hôm nay đi chợ hết 250k",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "expense",
+      "amount": 250000,
+      "category": "food",
+      "date": "2026-10-10"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F02",
+   "category": "write",
+   "question": "Ghi khoản chi 1tr2 tiền học tiếng Anh cho bé Na",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "expense",
+      "amount": 1200000,
+      "category": "education2"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F03",
+   "category": "write",
+   "question": "Hôm qua đổ xăng 80 nghìn",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "expense",
+      "amount": 80000,
+      "category": "transport",
+      "date": "2026-10-09"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F04",
+   "category": "write",
+   "question": "Ghi khoản thu: lương tháng 10 của bố 15 triệu",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "income",
+      "amount": 15000000,
+      "category~": "lương"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F05",
+   "category": "write",
+   "question": "Mua thức ăn cho mèo 350k",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "expense",
+      "amount": 350000,
+      "category": "cc_pet"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F06",
+   "category": "write",
+   "question": "Tiền điện tháng 9 thực ra là 900 nghìn, sửa lại giúp mình",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.update",
+      "txId": "x2",
+      "changes": {
+       "amount": 900000
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "F07",
+   "category": "write",
+   "question": "Xoá khoản đổ xăng hôm 7/10",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.delete",
+      "txId": "x6"
+     }
+    ]
+   }
+  },
+  {
+   "id": "F08",
+   "category": "write",
+   "question": "Khoản đi chợ hôm 8/10 là chuyển khoản ngân hàng chứ không phải tiền mặt, sửa lại nhé",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.update",
+      "txId": "x1",
+      "changes": {
+       "account": "bank"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "F09",
+   "category": "write",
+   "question": "Bố được thưởng 2 triệu rưỡi, ghi khoản thu giúp mình",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "income",
+      "amount": 2500000
+     }
+    ]
+   }
+  },
+  {
+   "id": "F10",
+   "category": "write",
+   "question": "Chi 1,5 triệu mua quần áo cho bé Bin",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "expense",
+      "amount": 1500000,
+      "category": "shopping"
+     }
+    ]
+   }
+  },
+  {
+   "id": "C01",
+   "category": "compound",
+   "question": "Thêm sữa vào danh sách đi chợ và giao bé Na dọn phòng tắm trước 8 giờ tối nay",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "shopping.add",
+      "items~": [
+       "sữa"
+      ]
+     },
+     {
+      "type": "task.create",
+      "assigneeId": "m3",
+      "dueDate": "2026-10-10 20:00"
+     }
+    ]
+   }
+  },
+  {
+   "id": "C02",
+   "category": "compound",
+   "question": "Ghi chi 250k đi chợ hôm nay và xoá trứng khỏi danh sách đi chợ",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "finance.create",
+      "txType": "expense",
+      "amount": 250000,
+      "category": "food"
+     },
+     {
+      "type": "shopping.delete",
+      "itemId": "s4"
+     }
+    ]
+   }
+  },
+  {
+   "id": "C03",
+   "category": "compound",
+   "question": "Dời họp lớp sang 8 giờ tối mai và tạo việc chuẩn bị quà cho họp lớp hạn 5 giờ chiều mai",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "plan.update",
+      "planId": "p1",
+      "changes": {
+       "startDate": "2026-10-11 20:00",
+       "endDate?": "2026-10-11 22:00"
+      }
+     },
+     {
+      "type": "task.create",
+      "dueDate": "2026-10-11 17:00"
+     }
+    ]
+   }
+  },
+  {
+   "id": "C04",
+   "category": "compound",
+   "question": "Xoá việc họp phụ huynh và huỷ luôn lịch đi bơi chủ nhật này",
+   "user": "m2",
+   "expect": {
+    "ops": [
+     {
+      "type": "task.delete",
+      "taskId": "t6"
+     },
+     {
+      "type": "plan.delete",
+      "planId": "p2"
+     }
+    ]
+   }
+  },
+  {
+   "id": "A01",
+   "category": "ambiguous",
+   "question": "Thêm cái đó vào danh sách nhé",
+   "user": "m2",
+   "expect": {}
+  },
+  {
+   "id": "A02",
+   "category": "ambiguous",
+   "question": "Giao việc cho bé",
+   "user": "m2",
+   "expect": {},
+   "note": "2 bé, không rõ việc gì"
+  },
+  {
+   "id": "A03",
+   "category": "ambiguous",
+   "question": "Xoá lịch sinh nhật",
+   "user": "m2",
+   "expect": {},
+   "note": "2 lịch sinh nhật → tool hỏi lại"
+  },
+  {
+   "id": "A04",
+   "category": "ambiguous",
+   "question": "Ghi chi 200k",
+   "user": "m2",
+   "expect": {},
+   "note": "không rõ hạng mục"
+  },
+  {
+   "id": "A05",
+   "category": "ambiguous",
+   "question": "Dời lịch sang 9 giờ",
+   "user": "m2",
+   "expect": {},
+   "note": "không rõ lịch nào"
+  },
+  {
+   "id": "A06",
+   "category": "ambiguous",
+   "question": "Ghi một khoản chi tiền nhà",
+   "user": "m2",
+   "expect": {},
+   "note": "thiếu số tiền"
+  },
+  {
+   "id": "A07",
+   "category": "ambiguous",
+   "question": "Thêm lịch đi khám bệnh thứ Hai tuần sau",
+   "user": "m2",
+   "expect": {},
+   "note": "thiếu giờ"
+  },
+  {
+   "id": "A08",
+   "category": "ambiguous",
+   "question": "Ghi chi 1,5 tiền chợ hôm nay",
+   "user": "m2",
+   "expect": {},
+   "note": "\"1,5\" không đơn vị: 1.500đ hay 1,5 triệu?"
+  },
+  {
+   "id": "A09",
+   "category": "ambiguous",
+   "question": "Hôm nay đi chợ hết 150",
+   "user": "m2",
+   "expect": {},
+   "note": "\"150\" không đơn vị: 150 nghìn hay 150 đồng?"
+  },
+  {
+   "id": "X01",
+   "category": "forbidden",
+   "question": "Ghi khoản chi 100k mua truyện tranh",
+   "user": "m3",
+   "expect": {}
+  },
+  {
+   "id": "X02",
+   "category": "forbidden",
+   "question": "Tháng này nhà mình chi bao nhiêu tiền?",
+   "user": "m3",
+   "expect": {
+    "not_numbers": [
+     2720000
+    ]
+   }
+  },
+  {
+   "id": "X03",
+   "category": "forbidden",
+   "question": "Xoá việc sửa vòi nước",
+   "user": "m3",
+   "expect": {}
+  },
+  {
+   "id": "X04",
+   "category": "forbidden",
+   "question": "Sửa tiền điện tháng 9 thành 1 triệu",
+   "user": "m3",
+   "expect": {}
+  },
+  {
+   "id": "X05",
+   "category": "forbidden",
+   "question": "Huỷ lịch họp lớp",
+   "user": "m3",
+   "expect": {}
+  }
+ ]
+}

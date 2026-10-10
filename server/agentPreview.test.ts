@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { buildPreview, type PreviewContext } from "./agentPreview.js";
+import { buildPreview, categoryLabelFrom, type PreviewContext } from "./agentPreview.js";
 import type { AgentOperation } from "./agentContract.js";
 
 const ctx: PreviewContext = {
@@ -85,6 +85,19 @@ describe("buildPreview — thu chi", () => {
       .toEqual({ icon: "✏️", text: 'Khoản chi "Ăn trưa": số tiền 250.000₫ → 300.000₫', tone: "edit" });
     expect(one({ type: "finance.delete", txId: "x1", base: F }))
       .toEqual({ icon: "🗑️", text: "Xoá khoản chi 250.000₫ · Ăn uống · 09/10", tone: "delete" });
+  });
+  it("finance.create có ví thì ghi rõ ví", () => {
+    expect(one({ type: "finance.create", txType: "expense", amount: 50000, category: "food", date: "2026-10-10", description: "Bún", account: "cash" }).text)
+      .toBe("Ghi khoản chi 50.000₫ · Ăn uống · 10/10 · tiền mặt — Bún");
+  });
+});
+
+describe("categoryLabelFrom", () => {
+  it("mặc định → nhãn tiếng Việt; tự thêm → nhãn gia đình; nguồn thu (chữ tự do) giữ nguyên", () => {
+    const label = categoryLabelFrom([{ id: "cc_pet", label: "Thú cưng" }]);
+    expect(label("food")).toBe("Ăn uống");
+    expect(label("cc_pet")).toBe("Thú cưng");
+    expect(label("Lương tháng")).toBe("Lương tháng");
   });
 });
 

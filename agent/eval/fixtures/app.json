@@ -1,0 +1,493 @@
+{
+ "_comment": "Dữ liệu giả của app cho eval phase 9 (đúng dạng JSON của API Node). Hôm nay: Thứ Bảy 2026-10-10. Tổng tháng 10: chi 2.720.000, thu 15.000.000, ăn uống 370.000; tuần này (05–11/10) chi 1.520.000.",
+ "/api/users": {
+  "users": [
+   {
+    "id": "m1",
+    "username": "m1",
+    "fullName": "Bố Minh",
+    "role": "admin",
+    "familyRelation": "ba",
+    "avatarColor": "bg-sky-500",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "m2",
+    "username": "m2",
+    "fullName": "Mẹ Lan",
+    "role": "member",
+    "familyRelation": "me",
+    "avatarColor": "bg-sky-500",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "m3",
+    "username": "m3",
+    "fullName": "Bé Na",
+    "role": "child",
+    "familyRelation": "con",
+    "avatarColor": "bg-sky-500",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "m4",
+    "username": "m4",
+    "fullName": "Bé Bin",
+    "role": "child",
+    "familyRelation": "con",
+    "avatarColor": "bg-sky-500",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   }
+  ]
+ },
+ "/api/tasks": {
+  "tasks": [
+   {
+    "id": "t1",
+    "title": "Đánh răng",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-10 07:00",
+    "creatorId": "m2",
+    "assigneeId": "m3",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t2",
+    "title": "Làm bài tập toán",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-10 19:00",
+    "creatorId": "m2",
+    "assigneeId": "m3",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t3",
+    "title": "Dọn phòng",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-11 09:00",
+    "creatorId": "m2",
+    "assigneeId": "m3",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t4",
+    "title": "Cho mèo ăn",
+    "description": "",
+    "status": "completed",
+    "priority": "medium",
+    "dueDate": "2026-10-10 18:00",
+    "creatorId": "m2",
+    "assigneeId": "m4",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z",
+    "completedById": "m4",
+    "completedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t5",
+    "title": "Đóng tiền điện",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-11 12:00",
+    "creatorId": "m2",
+    "assigneeId": "m2",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t6",
+    "title": "Họp phụ huynh",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-14 08:00",
+    "creatorId": "m2",
+    "assigneeId": "m2",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t7",
+    "title": "Sửa vòi nước",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-20 09:00",
+    "creatorId": "m1",
+    "assigneeId": "m1",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t8",
+    "title": "Đổ rác",
+    "description": "",
+    "status": "todo",
+    "priority": "medium",
+    "dueDate": "2026-10-10 20:00",
+    "creatorId": "m2",
+    "assigneeId": "m4",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "t9",
+    "title": "Đổ rác",
+    "description": "",
+    "status": "completed",
+    "priority": "medium",
+    "dueDate": "2026-10-03 20:00",
+    "creatorId": "m2",
+    "assigneeId": "m4",
+    "isShared": true,
+    "tags": [],
+    "rewardPoints": 0,
+    "comments": [],
+    "history": [],
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z",
+    "completedById": "m4",
+    "completedAt": "2026-10-01T00:00:00.000Z"
+   }
+  ]
+ },
+ "/api/plans": {
+  "plans": [
+   {
+    "id": "p1",
+    "title": "Họp lớp",
+    "description": "",
+    "startDate": "2026-10-12 19:00",
+    "endDate": "2026-10-12 21:00",
+    "isRecurring": false,
+    "recurrenceType": "none",
+    "creatorId": "m2",
+    "isShared": true,
+    "color": "sky",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "p2",
+    "title": "Đi bơi",
+    "description": "",
+    "startDate": "2026-10-11 08:00",
+    "endDate": "2026-10-11 09:00",
+    "isRecurring": false,
+    "recurrenceType": "none",
+    "creatorId": "m2",
+    "isShared": true,
+    "color": "sky",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "p3",
+    "title": "Sinh nhật bà",
+    "description": "",
+    "startDate": "2026-10-20 18:00",
+    "endDate": "2026-10-20 21:00",
+    "isRecurring": false,
+    "recurrenceType": "none",
+    "creatorId": "m1",
+    "isShared": true,
+    "color": "sky",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "p4",
+    "title": "Sinh nhật Bin",
+    "description": "",
+    "startDate": "2026-11-02 18:00",
+    "endDate": "2026-11-02 20:00",
+    "isRecurring": false,
+    "recurrenceType": "none",
+    "creatorId": "m2",
+    "isShared": true,
+    "color": "sky",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "p5",
+    "title": "Học piano",
+    "description": "",
+    "startDate": "2026-09-01 17:00",
+    "endDate": "2027-09-01 18:00",
+    "isRecurring": true,
+    "recurrenceType": "weekly",
+    "creatorId": "m2",
+    "isShared": true,
+    "color": "sky",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "recurrenceWeekdays": [
+     2,
+     4
+    ]
+   }
+  ]
+ },
+ "/api/shopping": {
+  "shoppingItems": [
+   {
+    "id": "s1",
+    "name": "Sữa tươi",
+    "quantity": "2 hộp",
+    "note": "",
+    "cat": "",
+    "isPurchased": false,
+    "creatorId": "m2",
+    "purchasedById": null,
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "s2",
+    "name": "Gạo",
+    "quantity": "5 kg",
+    "note": "",
+    "cat": "",
+    "isPurchased": true,
+    "creatorId": "m2",
+    "purchasedById": null,
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "s3",
+    "name": "Dầu ăn",
+    "quantity": "1 chai",
+    "note": "",
+    "cat": "",
+    "isPurchased": false,
+    "creatorId": "m2",
+    "purchasedById": null,
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "s4",
+    "name": "Trứng",
+    "quantity": "1 chục",
+    "note": "",
+    "cat": "",
+    "isPurchased": false,
+    "creatorId": "m2",
+    "purchasedById": null,
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   }
+  ]
+ },
+ "/api/finance": {
+  "transactions": [
+   {
+    "id": "x1",
+    "type": "expense",
+    "amount": 250000,
+    "category": "food",
+    "account": "cash",
+    "description": "Đi chợ",
+    "date": "2026-10-08",
+    "creatorId": "m2",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x2",
+    "type": "expense",
+    "amount": 850000,
+    "category": "utilities",
+    "account": "bank",
+    "description": "Tiền điện tháng 9",
+    "date": "2026-10-05",
+    "creatorId": "m1",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "receiptImage": "/uploads/receipts/dien-t9.jpg"
+   },
+   {
+    "id": "x3",
+    "type": "income",
+    "amount": 15000000,
+    "category": "Lương tháng",
+    "account": "bank",
+    "description": "Lương tháng 9",
+    "date": "2026-10-05",
+    "creatorId": "m1",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x4",
+    "type": "expense",
+    "amount": 120000,
+    "category": "food",
+    "account": "cash",
+    "description": "Ăn phở",
+    "date": "2026-10-09",
+    "creatorId": "m2",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x5",
+    "type": "expense",
+    "amount": 1200000,
+    "category": "cc_pet",
+    "account": "bank",
+    "description": "Tiêm phòng cho mèo",
+    "date": "2026-10-03",
+    "creatorId": "m2",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x6",
+    "type": "expense",
+    "amount": 300000,
+    "category": "transport",
+    "account": "e_wallet",
+    "description": "Đổ xăng",
+    "date": "2026-10-07",
+    "creatorId": "m1",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x7",
+    "type": "expense",
+    "amount": 450000,
+    "category": "education2",
+    "account": "bank",
+    "description": "Học phí piano",
+    "date": "2026-09-28",
+    "creatorId": "m2",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x8",
+    "type": "income",
+    "amount": 2000000,
+    "category": "Tiền thưởng",
+    "account": "bank",
+    "description": "Thưởng dự án",
+    "date": "2026-09-20",
+    "creatorId": "m1",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x9",
+    "type": "expense",
+    "amount": 95000,
+    "category": "food",
+    "account": "cash",
+    "description": "Ăn phở",
+    "date": "2026-09-15",
+    "creatorId": "m1",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   },
+   {
+    "id": "x10",
+    "type": "expense",
+    "amount": 35000.5,
+    "category": "food",
+    "account": "cash",
+    "description": "Cà phê",
+    "date": "2026-09-10",
+    "creatorId": "m1",
+    "createdAt": "2026-10-01T00:00:00.000Z"
+   }
+  ]
+ },
+ "/api/finance/categories": {
+  "customCategories": [
+   {
+    "id": "cc_pet",
+    "label": "Thú cưng",
+    "emoji": "🐶",
+    "color": "teal",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-01T00:00:00.000Z"
+   }
+  ],
+  "hiddenBuiltinCategories": [
+   "funeral"
+  ]
+ },
+ "/api/finance/budgets": {
+  "budgets": [
+   {
+    "id": "b1",
+    "month": "2026-10",
+    "category": "food",
+    "limit": 3000000
+   },
+   {
+    "id": "b2",
+    "month": "2026-10",
+    "category": "utilities",
+    "limit": 1500000
+   }
+  ]
+ },
+ "/api/finance/recurring-bills": {
+  "recurringBills": [
+   {
+    "id": "rb1",
+    "title": "Internet",
+    "amount": 220000,
+    "category": "internet",
+    "frequency": "monthly",
+    "nextDueDate": "2026-10-15",
+    "isActive": true,
+    "lastPaidDate": "2026-09-15",
+    "notes": ""
+   }
+  ]
+ },
+ "/api/shopping/meal-plan/current": {
+  "mealPlan": null
+ }
+}

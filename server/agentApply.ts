@@ -14,12 +14,16 @@ import {
   mutateAddShopping, mutateDeleteShopping, mutateSetShoppingPurchased,
   mutateCreateTask, mutateUpdateTask, mutateDeleteTask,
   mutateCreatePlan, mutateUpdatePlan, mutateDeletePlan,
+  mutateCreateTransaction, mutateUpdateTransaction, mutateDeleteTransaction,
 } from "./dataMutations.js";
 import {
-  canCreateTask, canEditTask, canDeleteTask, canCreatePlan, canEditPlan, canDeletePlan, sanitizeTaskWrite,
+  canCreateTask, canEditTask, canDeleteTask, canCreatePlan, canEditPlan, canDeletePlan, canWriteFinance, sanitizeTaskWrite,
 } from "./permissions.js";
-import { isLimitedViewer } from "../src/types.js";
-import type { FamilyOrganizerDB, FamilyPlan, Notification, ShoppingItem, Task, UserRole } from "../src/types.js";
+import { BUILTIN_EXPENSE_CATEGORY_KEYS } from "../src/utils/builtinExpenseCategories.js";
+import { isLimitedViewer, TransactionType } from "../src/types.js";
+import type {
+  FamilyOrganizerDB, FamilyPlan, FinancialTransaction, Notification, ShoppingItem, Task, UserRole,
+} from "../src/types.js";
 
 export interface ApplySession {
   userId: string;
@@ -32,6 +36,8 @@ export interface ApplyDeps {
   applyBatch: <T>(fn: (db: FamilyOrganizerDB) => T) => T;
   /** Gọi SAU khi family.db đã ghi xong: gửi push cho các thông báo vừa tạo (ghi lỗi thì không gọi). */
   afterCommit?: (notifications: Notification[]) => void;
+  /** Gọi SAU khi family.db đã ghi xong: xoá file (ảnh hoá đơn của giao dịch vừa xoá). Ghi lỗi thì không gọi. */
+  removeFiles?: (urls: string[]) => void;
   now?: () => number;
 }
 
@@ -45,11 +51,12 @@ export type ApplyOutcome =
 
 type FailStatus = 403 | 404 | 409 | 422 | 500 | 501;
 
-/** Loại operation đã bật ghi. M1: đi chợ; M2: việc + lịch; M3 sẽ thêm thu chi. */
+/** Loại operation đã bật ghi. M1: đi chợ; M2: việc + lịch; M3: thu chi (đủ 12 loại của hợp đồng). */
 export const ENABLED_OPERATIONS: ReadonlySet<AgentOperationType> = new Set([
   "shopping.add", "shopping.set_purchased", "shopping.delete",
   "task.create", "task.update", "task.delete",
   "plan.create", "plan.update", "plan.delete",
+  "finance.create", "finance.update", "finance.delete",
 ]);
 
 const CONFLICT_MSG = "Dữ liệu đã thay đổi kể từ lúc trợ lý đề xuất — hãy hỏi lại trợ lý.";
@@ -65,7 +72,10 @@ interface Snapshot {
   shopping: Map<string, ShoppingItem>;
   tasks: Map<string, Task>;
   plans: Map<string, FamilyPlan>;
+  transactions: Map<string, FinancialTransaction>;
   activeUserIds: Set<string>;
+  /** Hạng mục CHI đang dùng: mặc định chưa ẩn + hạng mục gia đình tự thêm (id cc_…). */
+  expenseCategories: Set<string>;
 }
 
 function snapshotOf(db: FamilyOrganizerDB): Snapshot {
@@ -73,7 +83,12 @@ function snapshotOf(db: FamilyOrganizerDB): Snapshot {
     shopping: new Map(db.shoppingItems.map((i) => [i.id, i])),
     tasks: new Map(db.tasks.map((t) => [t.id, t])),
     plans: new Map(db.plans.map((x) => [x.id, x])),
+    transactions: new Map((db.transactions ?? []).map((x) => [x.id, x])),
     activeUserIds: new Set(db.users.filter((u) => !u.isDeleted).map((u) => u.id)),
+    expenseCategories: new Set([
+      ...BUILTIN_EXPENSE_CATEGORY_KEYS.filter((k) => !(db.hiddenBuiltinCategories ?? []).includes(k)),
+      ...(db.customCategories ?? []).map((c) => c.id),
+    ]),
   };
 }
 
@@ -85,6 +100,7 @@ class RejectedOperation extends Error {
 }
 
 const FORBIDDEN_TASK = "Bạn không có quyền thay đổi công việc này.";
+const FORBIDDEN_FINANCE = "Chỉ Admin/Thành viên được ghi, sửa hoặc xoá thu chi.";
 const FORBIDDEN_PLAN = "Bạn chỉ thay đổi được sự kiện do mình tạo (Admin có toàn quyền); Khách không thêm/sửa lịch.";
 
 const conflict: Problem = { code: "conflict", error: CONFLICT_MSG };
@@ -137,6 +153,35 @@ function planChanges(changes: Extract<AgentOperation, { type: "plan.update" }>["
     if (changes.recurrenceType !== "weekly" && changes.recurrenceWeekdays === undefined) out.recurrenceWeekdays = undefined;
   }
   return out;
+}
+
+/** Giao dịch hiện tại khớp fingerprint lúc đề xuất? Số tiền lẻ (bản ghi cũ) → không tính được → báo sửa trong app. */
+function checkTransactionBase(cur: FinancialTransaction | undefined, base: { fingerprint: string }): Problem | null {
+  if (!cur) return conflict;
+  let fp: string;
+  try {
+    fp = fingerprint("transaction", cur);
+  } catch {
+    return invalid(`Giao dịch "${cur.description}" có số tiền lẻ/dữ liệu lạ — hãy sửa trực tiếp trong mục Thu chi.`);
+  }
+  return fp === base.fingerprint ? null : conflict;
+}
+
+/** Hạng mục hợp lệ theo loại giao dịch: khoản chi phải là hạng mục đang dùng; khoản thu là chữ tự do (như app). */
+function checkCategory(type: string, category: string | undefined, snap: Snapshot): Problem | null {
+  if (category === undefined || type === TransactionType.INCOME) return null;
+  return snap.expenseCategories.has(category)
+    ? null
+    : invalid(`Hạng mục chi "${category}" không còn dùng — hãy hỏi lại trợ lý hoặc chọn trong mục Thu chi.`);
+}
+
+/** Nội dung bắt buộc như form của app (hợp đồng cho phép chuỗi rỗng). */
+function checkTxDescription(description: string | undefined): Problem | null {
+  return description === undefined || description.trim() ? null : invalid("Nội dung giao dịch không được để trống.");
+}
+
+function checkTxDate(date: string | undefined): Problem | null {
+  return date === undefined || isRealDate(date) ? null : invalid(`Ngày "${date}" không có thật.`);
 }
 
 /** Guard + quyền cho một operation trên dữ liệu hiện tại. Trả lý do lỗi hoặc null. */
@@ -197,6 +242,22 @@ function checkOperation(op: AgentOperation, snap: Snapshot, s: ApplySession): Pr
       return canDeletePlan(cur, s) ? null : forbidden(FORBIDDEN_PLAN);
     }
 
+    // Thu chi: như POST/DELETE /api/finance — Admin/Thành viên sửa/xoá được mọi giao dịch.
+    case "finance.create":
+      if (!canWriteFinance(s)) return forbidden(FORBIDDEN_FINANCE);
+      return checkTxDescription(op.description) ?? checkTxDate(op.date) ?? checkCategory(op.txType, op.category, snap);
+    case "finance.update": {
+      if (!canWriteFinance(s)) return forbidden(FORBIDDEN_FINANCE);
+      const cur = snap.transactions.get(op.txId);
+      return checkTransactionBase(cur, op.base)
+        ?? checkTxDescription(op.changes.description)
+        ?? checkTxDate(op.changes.date)
+        ?? checkCategory(cur!.type, op.changes.category, snap);
+    }
+    case "finance.delete":
+      if (!canWriteFinance(s)) return forbidden(FORBIDDEN_FINANCE);
+      return checkTransactionBase(snap.transactions.get(op.txId), op.base);
+
     default:
       return { code: "unsupported", error: "Trợ lý chưa hỗ trợ thay đổi loại dữ liệu này." };
   }
@@ -211,7 +272,14 @@ function targetOf(op: AgentOperation): string | null {
   return null;
 }
 
-function runOperation(db: FamilyOrganizerDB, op: AgentOperation, index: number, s: ApplySession, notices: Notification[]): ApplyResult {
+/** Việc cần làm SAU khi ghi xong (ghi lỗi thì bỏ cả). */
+interface AfterCommit {
+  notices: Notification[];
+  files: string[];
+}
+
+function runOperation(db: FamilyOrganizerDB, op: AgentOperation, index: number, s: ApplySession, after: AfterCommit): ApplyResult {
+  const { notices } = after;
   switch (op.type) {
     case "shopping.add": {
       const ids = op.items.map((it) => mutateAddShopping(db, it, s.userId, s.username).id);
@@ -248,9 +316,20 @@ function runOperation(db: FamilyOrganizerDB, op: AgentOperation, index: number, 
       const removed = mutateDeletePlan(db, op.planId, s.userId, s.username);
       return removed ? { index, ok: true, id: removed.id } : { index, ok: true, id: op.planId, skipped: true };
     }
+    case "finance.create": {
+      const { type: _t, txType, ...data } = op;
+      return { index, ok: true, id: mutateCreateTransaction(db, { ...data, type: txType as TransactionType } as Partial<FinancialTransaction>, s.userId, s.username).id };
+    }
+    case "finance.update":
+      return { index, ok: true, id: mutateUpdateTransaction(db, op.txId, op.changes, s.userId, s.username).id };
+    case "finance.delete": {
+      const removed = mutateDeleteTransaction(db, op.txId, s.userId, s.username);
+      if (removed?.receiptImage) after.files.push(removed.receiptImage);
+      return removed ? { index, ok: true, id: removed.id } : { index, ok: true, id: op.txId, skipped: true };
+    }
     default:
       // checkOperation đã chặn trước — tới đây là lỗi lập trình.
-      throw new Error(`operation chưa hỗ trợ: ${op.type}`);
+      throw new Error(`operation chưa hỗ trợ: ${(op as { type: string }).type}`);
   }
 }
 
@@ -305,7 +384,7 @@ export function applyProposal(deps: ApplyDeps, proposalId: string, hash: unknown
   // Kiểm guard + quyền NGAY TRÊN bản DB của batch (một lần đọc, không có khe giữa kiểm và ghi):
   // có lỗi thì ném RejectedOperation → applyBatch không ghi gì.
   let results: ApplyResult[];
-  const notices: Notification[] = [];
+  const after: AfterCommit = { notices: [], files: [] };
   try {
     results = deps.applyBatch((db) => {
       const snap = snapshotOf(db);
@@ -313,7 +392,7 @@ export function applyProposal(deps: ApplyDeps, proposalId: string, hash: unknown
         const problem = checkOperation(op, snap, session);
         if (problem) throw new RejectedOperation(problem);
       }
-      return p.operations.map((op, i) => runOperation(db, op, i, session, notices));
+      return p.operations.map((op, i) => runOperation(db, op, i, session, after));
     });
   } catch (e) {
     if (e instanceof RejectedOperation) {
@@ -326,9 +405,16 @@ export function applyProposal(deps: ApplyDeps, proposalId: string, hash: unknown
     return fail(500, "write_failed", error, store.getProposal(p.id));
   }
   try {
-    if (notices.length > 0) deps.afterCommit?.(notices);
+    if (after.notices.length > 0) deps.afterCommit?.(after.notices);
   } catch (e) {
     console.error("Không gửi được thông báo sau khi áp dụng đề xuất:", (e as Error)?.message);
+  }
+  for (const url of after.files) {
+    try {
+      deps.removeFiles?.([url]); // từng file: một file lỗi không chặn các file còn lại
+    } catch (e) {
+      console.error("Không xoá được file sau khi áp dụng đề xuất:", (e as Error)?.message);
+    }
   }
   const events = [...modules].map((m) => MODULE_EVENT[m]);
   // family.db đã ghi xong: lỗi ở agent.db KHÔNG được biến thành "thất bại" (dữ liệu đã có) —

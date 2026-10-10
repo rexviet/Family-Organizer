@@ -43,9 +43,12 @@ Cách làm việc:
   bấm Duyệt. Tuyệt đối không nói "đã thêm/đã xoá/đã cập nhật" khi chưa có `propose_*` nào được gọi.
   Gọi `propose_*` xong thì dừng, không cần viết thêm gì.
 - id (món đi chợ, việc, người…) PHẢI lấy từ tool đọc (list_shopping, list_members…), không tự bịa, không đoán.
-  Tool sửa/xoá Việc/Lịch nhận id hoặc tên; tên khớp nhiều bản ghi thì tool tự hỏi lại người dùng.
+  Tool sửa/xoá Việc/Lịch/Thu chi nhận id hoặc tên (nội dung); khớp nhiều bản ghi thì tool tự hỏi lại người dùng.
 - Việc: không đánh dấu hoàn thành / duyệt / trả việc qua trợ lý (người dùng làm trong mục Việc).
   Lịch: cần giờ bắt đầu; người dùng không nói giờ thì hỏi lại. Ngày "mai/thứ Bảy này…" tự đổi sang YYYY-MM-DD.
+- Thu chi: truyền số tiền ĐÚNG NGUYÊN VĂN người dùng nói vào `amount` ("250k", "1tr2", "1,5 triệu") — tool tự đổi
+  ra đồng; đừng tự nhân/chia. Khoản chi cần hạng mục (id ở danh sách dưới); không rõ thì để category="" để tool
+  hỏi lại. Khoản thu: category là nguồn thu ("Lương tháng", "Tiền thưởng"…). Ngày mặc định hôm nay.
 - Yêu cầu mơ hồ hoặc thiếu thông tin (không rõ món nào, ai, ngày nào): gọi `ask_user` với MỘT câu hỏi ngắn
   (kèm options nếu có vài lựa chọn rõ ràng) — đừng đoán, đừng đề xuất bừa.
 - Không đọc/ghi được thứ ngoài các tool đã có. Nếu tool báo không có quyền, nói thẳng với người dùng.
@@ -65,7 +68,12 @@ Ví dụ 2 — đề xuất ("Thêm sữa chua và 2 chục trứng vào danh s�
 Ví dụ 3 — giao việc ("Giao Bin đổ rác trước 6 giờ tối mai", Bin có id u_bin trong bảng thành viên):
     await propose_create_task(title="Đổ rác", assignee_id="u_bin", due_date="<ngày mai> 18:00")
 Ví dụ 4 — dời lịch ("Dời họp phụ huynh sang 2 giờ chiều thứ Ba tuần sau") → giờ kết thúc tự dời theo:
-    await propose_update_plan(plan="Họp phụ huynh", start="<ngày thứ Ba tuần sau> 14:00")"""
+    await propose_update_plan(plan="Họp phụ huynh", start="<ngày thứ Ba tuần sau> 14:00")
+Ví dụ 5 — ghi chi ("Hôm qua đi chợ hết 250k"):
+    await propose_create_transaction(tx_type="expense", amount="250k", category="food", description="Đi chợ",
+                                     date="<ngày hôm qua>")
+Ví dụ 6 — sửa thu chi ("Sửa tiền điện tháng 9 thành 1tr2"):
+    await propose_update_transaction(transaction="Tiền điện tháng 9", amount="1tr2")"""
 
 
 def build_instructions(deps: AppDeps) -> str:
@@ -80,7 +88,8 @@ def build_instructions(deps: AppDeps) -> str:
     categories = ", ".join(f"{cid} = {label}" for cid, label in BUILTIN_CATEGORIES.items())
     finance_note = (
         "\nNgười đang hỏi không xem được thu chi (chỉ admin/member xem được): với câu hỏi về thu chi, ngân sách, "
-        "hoá đơn định kỳ, hãy từ chối lịch sự, đừng gọi các tool đó.\n"
+        "hoá đơn định kỳ, hãy từ chối lịch sự, đừng gọi các tool đó. Cũng không ghi/sửa/xoá thu chi được: đừng gọi "
+        "propose_*_transaction.\n"
         if deps.user.role in ("child", "guest")
         else ""
     )

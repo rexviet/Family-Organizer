@@ -7,6 +7,7 @@
 // agent; tên bản ghi bị sửa/xoá lấy từ DB (red-team L4) để card không mâu thuẫn dữ liệu thật.
 
 import type { AgentOperation } from "./agentContract.js";
+import vi from "../src/i18n/locales/vi.json";
 
 export interface PreviewLine {
   icon: string;
@@ -138,7 +139,8 @@ function describeFor(ctx: PreviewContext) {
       case "finance.create":
         return {
           icon: op.txType === "income" ? "💰" : "💸",
-          text: `Ghi ${txKind(op.txType)} ${money(op.amount)} · ${category(op.category)} · ${shortDate(op.date)} — ${op.description}`,
+          text: `Ghi ${txKind(op.txType)} ${money(op.amount)} · ${category(op.category)} · ${shortDate(op.date)}`
+            + `${op.account ? ` · ${ACCOUNT[op.account]}` : ""} — ${op.description}`,
           tone: "add",
         };
       case "finance.update": {
@@ -155,6 +157,14 @@ function describeFor(ctx: PreviewContext) {
       }
     }
   };
+}
+
+const BUILTIN_LABELS: Record<string, string> = (vi as { categories?: Record<string, string> }).categories ?? {};
+
+/** Nhãn hạng mục cho thẻ Duyệt: mặc định → nhãn tiếng Việt; tự thêm (cc_…) → nhãn gia đình; nguồn thu giữ nguyên. */
+export function categoryLabelFrom(custom: { id: string; label: string }[]): (id: string) => string {
+  const byId = new Map(custom.map((c) => [c.id, c.label]));
+  return (id) => byId.get(id) ?? (Object.hasOwn(BUILTIN_LABELS, id) ? BUILTIN_LABELS[id] : id);
 }
 
 /** Mỗi operation một dòng, đúng thứ tự. */

@@ -24,3 +24,9 @@ def fold(s: str) -> str:
     decomposed = unicodedata.normalize("NFD", s.casefold().replace("đ", "d"))
     stripped = "".join(c for c in decomposed if not unicodedata.combining(c))
     return " ".join(stripped.split())
+
+# Nguồn THU gợi ý (INCOME_CATEGORIES ở src/components/Finance.tsx) — hạng mục thu là chữ tự do, lưu nguyên văn.
+INCOME_CATEGORIES: Final = (
+    "Lương tháng", "Tiền thưởng", "Làm thêm / Freelance", "Hoa hồng bán hàng", "Cổ tức",
+    "Lợi nhuận cổ phần / Đầu tư", "Cho thuê (nhà/xe...)", "Tiền mượn / Vay", "Được cho / Biếu tặng",
+)

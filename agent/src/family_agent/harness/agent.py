@@ -36,6 +36,7 @@ from family_agent.harness.deps import AppDeps, ToolError, UserInfo, build_http_c
 from family_agent.harness.end_when_settled import EndWhenSettled, is_settled
 from family_agent.harness.prompts import build_instructions
 from family_agent.harness.tools.ask import ask_toolset
+from family_agent.harness.tools.finance import finance_toolset
 from family_agent.harness.tools.plans import plan_toolset
 from family_agent.harness.tools.read import load_members, read_toolset
 from family_agent.harness.tools.shopping import shopping_toolset
@@ -126,7 +127,7 @@ def build_agent(model: Model, limits: TurnLimits) -> Agent[AppDeps, str]:
         model,
         deps_type=AppDeps,
         instructions=lambda ctx: build_instructions(ctx.deps),
-        toolsets=[read_toolset, shopping_toolset, task_toolset, plan_toolset, ask_toolset],
+        toolsets=[read_toolset, shopping_toolset, task_toolset, plan_toolset, finance_toolset, ask_toolset],
         capabilities=[
             CodeMode(
                 max_tool_calls=limits.max_tool_calls,

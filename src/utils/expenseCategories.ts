@@ -14,6 +14,7 @@
 
 import i18n from "../i18n/index.js";
 import type { CustomExpenseCategory } from "../types.js";
+import { BUILTIN_EXPENSE_CATEGORIES } from "./builtinExpenseCategories.js";
 
 export interface ExpenseCatColor {
   /** gradient thanh biểu đồ, vd "from-orange-500 to-orange-400" */
@@ -54,29 +55,8 @@ const FALLBACK_COLOR: ExpenseCatColor = EXPENSE_CAT_COLORS.slate;
 export const catColor = (key?: string): ExpenseCatColor =>
   (key && EXPENSE_CAT_COLORS[key]) || FALLBACK_COLOR;
 
-export interface BuiltinCat {
-  /** key i18n & giá trị lưu trong transaction.category */
-  value: string;
-  emoji: string;
-  color: string;
-}
-
-// Hạng mục CHI mặc định do lập trình viên web app cung cấp — KHÔNG xóa được, chỉ
-// có thể ẩn. Thứ tự này cũng là thứ tự hiển thị trong ô chọn. Emoji/màu khớp với
-// bộ cũ đã dùng ở Finance (CAT_BAR/categoryIcon) và Dashboard (EXPENSE_CAT_STYLE).
-export const BUILTIN_EXPENSE_CATEGORIES: BuiltinCat[] = [
-  { value: "food",          emoji: "🍲",  color: "orange" },
-  { value: "education2",    emoji: "📚",  color: "violet" },
-  { value: "utilities",     emoji: "⚡",  color: "amber" },
-  { value: "shopping",      emoji: "🛍️",  color: "pink" },
-  { value: "medical",       emoji: "💊",  color: "rose" },
-  { value: "transport",     emoji: "🚗",  color: "sky" },
-  { value: "debt_bank",     emoji: "🏦",  color: "red" },
-  { value: "debt_personal", emoji: "🤝",  color: "teal" },
-  { value: "funeral",       emoji: "🌸",  color: "zinc" },
-  { value: "ceremony",      emoji: "🎁",  color: "yellow" },
-  { value: "other",         emoji: "🏷️",  color: "slate" },
-];
+// Danh sách hạng mục mặc định nằm ở file thuần (không import i18n) để server dùng chung.
+export { BUILTIN_EXPENSE_CATEGORIES, type BuiltinCat } from "./builtinExpenseCategories.js";
 
 const BUILTIN_MAP = new Map(BUILTIN_EXPENSE_CATEGORIES.map(c => [c.value, c]));
 

@@ -171,3 +171,41 @@ describe("tích hợp: Duyệt đề xuất Việc/Lịch ghi thật vào SQLite
     }
   });
 });
+
+describe("Thu chi: endpoint + trợ lý dùng chung mutator (SQLite thật)", () => {
+  it("saveTransaction tạo/sửa: nhật ký được LƯU (trước đây writeRaw đè mất); xoá giao dịch không còn", () => {
+    const tx = FamilyDB.saveTransaction({ type: "expense" as never, amount: 120000, category: "food", description: "Bún chả", date: "2026-10-09" }, "user_admin", "admin");
+    expect(tx).toMatchObject({ account: "bank", creatorId: "user_admin" });
+    expect(FamilyDB.getActivityLogs()[0].details).toContain("Bún chả");
+    FamilyDB.saveTransaction({ ...tx, amount: 150000 }, "user_admin", "admin");
+    expect(FamilyDB.getActivityLogs()[0].details).toContain("120.000 → 150.000");
+    FamilyDB.deleteTransaction(tx.id, "user_admin", "admin");
+    expect(FamilyDB.getTransactions().some((t) => t.id === tx.id)).toBe(false);
+    expect(FamilyDB.getActivityLogs()[0].action).toBe("Xóa giao dịch tài chính");
+  });
+
+  it("Duyệt finance.update qua FamilyDB thật: MERGE — ảnh hoá đơn + trường khác giữ nguyên", async () => {
+    const { AgentStore } = await import("./agentStore.js");
+    const { applyProposal } = await import("./agentApply.js");
+    const { fingerprint, planHash } = await import("./agentContract.js");
+    const { UserRole } = await import("../src/types.js");
+    const store = new AgentStore(path.join(tmp, "agent-fin.db"));
+    try {
+      const tx = FamilyDB.saveTransaction({
+        type: "expense" as never, amount: 850000, category: "utilities", account: "cash" as never,
+        description: "Tiền điện", date: "2026-10-05", receiptImage: "/uploads/receipts/dien.jpg",
+      }, "user_admin", "admin");
+      const stored = FamilyDB.getTransactions().find((t) => t.id === tx.id)!;
+      const ops = [{ type: "finance.update" as const, txId: tx.id, base: { fingerprint: fingerprint("transaction", stored) }, changes: { amount: 900000 } }];
+      const prop = store.createProposal({ conversationId: "c", userId: "user_admin", operations: ops, planHash: planHash(ops), preview: [] }, Date.now());
+      const removed: string[] = [];
+      const r = applyProposal({ store, applyBatch: (fn) => FamilyDB.applyBatch(fn), removeFiles: (u) => removed.push(...u) },
+        prop.id, prop.planHash, { userId: "user_admin", username: "admin", role: UserRole.ADMIN });
+      expect(r.status).toBe(200);
+      expect(FamilyDB.getTransactions().find((t) => t.id === tx.id)).toEqual({ ...stored, amount: 900000 });
+      expect(removed).toEqual([]);
+    } finally {
+      store.close();
+    }
+  });
+});

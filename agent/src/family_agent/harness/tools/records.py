@@ -1,4 +1,4 @@
-"""Phần dùng chung của tool đề xuất Việc/Lịch: kiểm chuỗi/ngày, tìm bản ghi theo id hoặc tên, ghi đề xuất.
+"""Phần dùng chung của tool đề xuất Việc/Lịch/Thu chi: kiểm chuỗi/ngày, tìm bản ghi theo id hoặc tên, ghi đề xuất.
 
 Tìm bản ghi: id khớp đúng → lấy luôn; không thì so tên không dấu (khớp đúng tên trước, rồi chứa từ khoá), ưu tiên bản
 ghi "còn hiệu lực" (vd. việc chưa xong). Còn nhiều hơn một → hỏi lại người dùng với tối đa 5 lựa chọn (spec §6.3).
@@ -80,8 +80,11 @@ def resolve(
     list_tool: str,
     label: Callable[[dict[str, Any]], str],
     prefer: Callable[[dict[str, Any]], bool] = lambda _r: True,
+    name_key: str = "title",
 ) -> dict[str, Any] | None:
-    """Bản ghi theo id/tên/nhãn lựa chọn. Mơ hồ → ghi câu hỏi lại và trả None; không thấy → ToolError."""
+    """Bản ghi theo id/tên/nhãn lựa chọn. Mơ hồ → ghi câu hỏi lại và trả None; không thấy → ToolError.
+
+    `name_key`: trường dùng làm "tên" để so (việc/lịch: `title`; giao dịch: `description`)."""
     key = ref.strip() if isinstance(ref, str) else ""
     if not key:
         raise ToolError(f"Cần id hoặc tên {kind} (lấy từ {list_tool}).")
@@ -94,8 +97,8 @@ def resolve(
     if len(by_label) == 1:
         return by_label[0]
     needle = fold(key)
-    matches = [r for r in rows if needle and needle in fold(str(r.get("title", "")))]
-    pool = [r for r in matches if fold(str(r.get("title", ""))) == needle] or matches
+    matches = [r for r in rows if needle and needle in fold(str(r.get(name_key, "")))]
+    pool = [r for r in matches if fold(str(r.get(name_key, ""))) == needle] or matches
     if len(pool) > 1:
         live = [r for r in pool if prefer(r)]
         pool = live or pool

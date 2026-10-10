@@ -280,8 +280,3 @@ it("đề xuất trộn đi chợ + việc + lịch: một lần ghi, broadcast 
   expect(r).toMatchObject({ status: 200, modules: ["SHOPPING_UPDATE", "TASKS_UPDATE", "PLANS_UPDATE"] });
   expect(writes).toBe(1);
 });
-
-it("finance.* vẫn chưa bật (M3) → 501", () => {
-  const { r } = apply([{ type: "finance.create", txType: "expense", amount: 1000, category: "food", date: "2026-10-10", description: "x" }], ADMIN);
-  expect(r).toMatchObject({ status: 501, code: "unsupported" });
-});

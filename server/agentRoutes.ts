@@ -230,7 +230,7 @@ export function createAgentRouter(deps: AgentRouteDeps): express.Router {
         } else {
           kind = "answer";
           reply = checked.ok
-            ? "Trợ lý hiện thay đổi được Đi chợ, Việc và Lịch. Thu chi bạn sửa trực tiếp trong app nhé."
+            ? "Trợ lý chưa thay đổi được loại dữ liệu này — bạn sửa trực tiếp trong app nhé."
             : "Mình chưa tạo được đề xuất hợp lệ cho yêu cầu này. Bạn nói lại cụ thể hơn giúp mình nhé.";
           logTurn({ userId: session.userId, status: checked.ok ? "unsupported_proposal" : "invalid_proposal" });
         }

@@ -20,6 +20,11 @@ export function canDeleteTask(session: Actor): boolean {
   return isAdult(session.role);
 }
 
+/** Ghi/sửa/xoá thu chi (POST/DELETE /api/finance, requireRole ADMIN|MEMBER): chỉ Admin/Thành viên, mọi giao dịch. */
+export function canWriteFinance(session: Actor): boolean {
+  return isAdult(session.role);
+}
+
 /** Tạo lịch (POST /api/plans không kèm id): Admin/Thành viên/Trẻ — Khách không. */
 export function canCreatePlan(session: Actor): boolean {
   return isAdult(session.role) || session.role === UserRole.CHILD;

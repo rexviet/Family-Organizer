@@ -8,7 +8,8 @@
 // (FamilyDB.applyBatch) để hai đường ghi không lệch nhau. File không có side effect khi import.
 
 import crypto from "crypto";
-import type { FamilyOrganizerDB, FamilyPlan, Notification, ShoppingItem, Task } from "../src/types.js";
+import { AccountType, TransactionType } from "../src/types.js";
+import type { FamilyOrganizerDB, FamilyPlan, FinancialTransaction, Notification, ShoppingItem, Task } from "../src/types.js";
 
 /** ID mới: tiền tố + thời gian + hậu tố ngẫu nhiên — ghi nhiều bản ghi liền nhau không trùng. */
 export function newId(prefix: string): string {
@@ -18,7 +19,7 @@ export function newId(prefix: string): string {
 const MAX_ACTIVITY_LOGS = 300;
 const MAX_NOTIFICATIONS = 200;
 
-function mutateLogActivity(db: FamilyOrganizerDB, userId: string, username: string, action: string, details: string): void {
+export function mutateLogActivity(db: FamilyOrganizerDB, userId: string, username: string, action: string, details: string): void {
   db.activityLogs.unshift({
     id: newId("log"),
     userId,
@@ -310,5 +311,118 @@ export function mutateDeletePlan(db: FamilyOrganizerDB, id: string, userId: stri
   if (idx === -1) return null;
   const [removed] = db.plans.splice(idx, 1);
   mutateLogActivity(db, userId, username, "Xóa Lịch trình", `Đã xóa sự kiện "${removed.title}".`);
+  return removed;
+}
+
+// ---------------------------------------------------------------------------
+// Thu chi
+// ---------------------------------------------------------------------------
+
+const TX_CATEGORY_LABELS: Record<string, string> = {
+  food: "Ăn uống", education2: "Học tập", utilities: "Điện nước", shopping: "Mua sắm", medical: "Y tế",
+  transport: "Đi lại", debt_bank: "Trả nợ NH", debt_personal: "Trả nợ CN",
+  funeral: "Ma chay", ceremony: "Hiếu hỉ", rent: "Thuê nhà", internet: "Cước Internet",
+  phone: "Điện thoại", insurance: "Bảo hiểm", loan: "Trả nợ NH", other: "Khác"
+};
+const TX_ACCOUNT_LABELS: Record<string, string> = {
+  cash: "Tiền mặt", bank: "Ngân hàng", e_wallet: "Ví điện tử"
+};
+
+const vnd = (n: unknown) => Number(n).toLocaleString("vi-VN");
+
+/** Các thay đổi "cũ → mới" giữa 2 bản giao dịch — để nhật ký minh bạch từng chỉnh sửa. */
+export function describeTransactionChanges(oldTx: FinancialTransaction, newTx: FinancialTransaction): string[] {
+  const changes: string[] = [];
+  if (oldTx.type !== newTx.type)
+    changes.push(`loại ${oldTx.type === "income" ? "Thu" : "Chi"} → ${newTx.type === "income" ? "Thu" : "Chi"}`);
+  if (oldTx.amount !== newTx.amount)
+    changes.push(`số tiền ${vnd(oldTx.amount)} → ${vnd(newTx.amount)} VNĐ`);
+  if (oldTx.description !== newTx.description)
+    changes.push(`nội dung "${oldTx.description}" → "${newTx.description}"`);
+  if (oldTx.date !== newTx.date)
+    changes.push(`ngày ${oldTx.date} → ${newTx.date}`);
+  if (oldTx.category !== newTx.category)
+    changes.push(`hạng mục ${TX_CATEGORY_LABELS[oldTx.category] || oldTx.category} → ${TX_CATEGORY_LABELS[newTx.category] || newTx.category}`);
+  if (oldTx.account !== newTx.account)
+    changes.push(`ví ${TX_ACCOUNT_LABELS[oldTx.account] || oldTx.account} → ${TX_ACCOUNT_LABELS[newTx.account] || newTx.account}`);
+  if ((oldTx.receiptImage || "") !== (newTx.receiptImage || ""))
+    changes.push(newTx.receiptImage ? (oldTx.receiptImage ? "thay ảnh hóa đơn" : "thêm ảnh hóa đơn") : "gỡ ảnh hóa đơn");
+  return changes;
+}
+
+/** Ghi giao dịch mới (giống nhánh tạo của POST /api/finance — cùng mặc định) + nhật ký. */
+export function mutateCreateTransaction(
+  db: FamilyOrganizerDB,
+  txData: Partial<FinancialTransaction>,
+  userId: string,
+  username: string
+): FinancialTransaction {
+  const newTx: FinancialTransaction = {
+    id: newId("tx"),
+    type: txData.type || TransactionType.EXPENSE,
+    amount: txData.amount || 0,
+    category: txData.category || "other",
+    account: txData.account || AccountType.BANK,
+    description: txData.description || "",
+    date: txData.date || new Date().toISOString().slice(0, 10),
+    creatorId: userId,
+    receiptImage: txData.receiptImage, // Base64 supported
+    createdAt: new Date().toISOString()
+  };
+  db.transactions.push(newTx);
+  mutateLogActivity(db, userId, username, "Ghi chép tài chính",
+    `Đã ghi lại ${newTx.type === "expense" ? "khoản chi" : "khoản thu"} "${newTx.description}" (${vnd(newTx.amount)} VNĐ)`);
+  return newTx;
+}
+
+/** Các trường trợ lý được sửa trên một giao dịch (khớp `finance.update.changes` của hợp đồng). */
+export interface TransactionFieldChanges {
+  amount?: number;
+  category?: string;
+  date?: string;
+  description?: string;
+  account?: "cash" | "bank" | "e_wallet";
+}
+
+/**
+ * Sửa một số trường của giao dịch: MERGE `{...cũ, ...changes}` — trường không nêu (loại, ảnh hoá đơn, người tạo…)
+ * giữ nguyên. Khác FamilyDB.saveTransaction (form gửi nguyên bản ghi, trường thiếu về mặc định + xoá ảnh hoá đơn).
+ */
+export function mutateUpdateTransaction(
+  db: FamilyOrganizerDB,
+  id: string,
+  changes: TransactionFieldChanges,
+  userId: string,
+  username: string
+): FinancialTransaction {
+  const idx = db.transactions.findIndex(t => t.id === id);
+  if (idx === -1) throw new Error("Giao dịch không tồn tại");
+  const old = db.transactions[idx];
+  const patch: Partial<FinancialTransaction> = {};
+  for (const [k, v] of Object.entries(changes)) {
+    if (v !== undefined) (patch as Record<string, unknown>)[k] = v;
+  }
+  const updated: FinancialTransaction = { ...old, ...patch };
+  db.transactions[idx] = updated;
+  const diff = describeTransactionChanges(old, updated);
+  mutateLogActivity(db, userId, username, "Sửa giao dịch tài chính",
+    diff.length > 0
+      ? `Đã sửa giao dịch "${old.description}": ${diff.join("; ")}.`
+      : `Đã lưu lại giao dịch "${updated.description}" (không có thay đổi).`);
+  return updated;
+}
+
+/** Xoá giao dịch + nhật ký. Không tồn tại → null. File hoá đơn do người gọi xoá SAU khi ghi xong. */
+export function mutateDeleteTransaction(
+  db: FamilyOrganizerDB,
+  id: string,
+  userId: string,
+  username: string
+): FinancialTransaction | null {
+  const idx = db.transactions.findIndex(t => t.id === id);
+  if (idx === -1) return null;
+  const [removed] = db.transactions.splice(idx, 1);
+  mutateLogActivity(db, userId, username, "Xóa giao dịch tài chính",
+    `Đã xóa giao dịch "${removed.description}" (${vnd(removed.amount)} VNĐ).`);
   return removed;
 }

@@ -17,12 +17,13 @@ import { createAgentTokens, isAgentToken } from "./server/agentToken.js";
 import { AgentStore } from "./server/agentStore.js";
 import { AgentClient } from "./server/agentClient.js";
 import { createAgentRouter } from "./server/agentRoutes.js";
+import { categoryLabelFrom } from "./server/agentPreview.js";
 import type { Task } from "./src/types.js";
 import { UserRole, DishSlot, MealIngredient, DOCUMENT_TYPE_LABELS } from "./src/types.js";
 import { buildPlanFromLibrary, dedupeAndAnnotateGroceries } from "./src/utils/mealPlan.js";
 import { normalizeSearchText, matchesQuery, excerptAround } from "./src/utils/searchText.js";
 import { canSeeTask, canSeePlan, canSeeFinance, Viewer } from "./src/utils/visibility.js";
-import { saveDataUrlToFile, UPLOADS_DIR } from "./server/media.js";
+import { saveDataUrlToFile, deleteMediaByUrl, UPLOADS_DIR } from "./server/media.js";
 import { streamFullBackup, fullBackupFilename, importFullBackup } from "./server/fullBackup.js";
 import { telegramBackupStatus, sendBackupToTelegram, runTelegramBackupTick } from "./server/telegramBackup.js";
 import { sendWeeklyDigest, runWeeklyDigestTick } from "./server/weeklyDigest.js";
@@ -1956,10 +1957,12 @@ app.use(createAgentRouter({
     tasks: FamilyDB.getTasks().filter(t => canSeeTask(t, viewer)),
     plans: FamilyDB.getPlans().filter(p => canSeePlan(p, viewer)),
     transactions: canSeeFinance(viewer.role) ? FamilyDB.getTransactions() : [],
+    categoryLabel: categoryLabelFrom(FamilyDB.getCategoryConfig().customCategories),
   }),
   applyDeps: {
     applyBatch: (fn) => FamilyDB.applyBatch(fn),
     afterCommit: (notifications) => FamilyDB.pushNotifications(notifications),
+    removeFiles: (urls) => urls.forEach((u) => deleteMediaByUrl(u)), // deleteMediaByUrl tự bắt lỗi, không ném
   },
   broadcast: broadcastSyncEvent,
 }));

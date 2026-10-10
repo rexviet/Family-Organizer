@@ -92,3 +92,26 @@ def test_build_agent_dang_ky_toolset_viec_lich() -> None:
 
     agent = build_agent(TestModel(), TurnLimits())
     assert task_toolset in agent.toolsets and plan_toolset in agent.toolsets
+
+
+def test_agent_co_3_tool_thu_chi_va_dang_ky() -> None:
+    from pydantic_ai.models.test import TestModel
+
+    from family_agent.harness.agent import TurnLimits, build_agent
+    from family_agent.harness.tools.finance import finance_toolset
+
+    assert set(finance_toolset.tools) == {
+        "propose_create_transaction", "propose_update_transaction", "propose_delete_transaction",
+    }
+    assert finance_toolset in build_agent(TestModel(), TurnLimits()).toolsets
+
+
+def test_co_vi_du_ghi_thu_chi_tien_nguyen_van() -> None:
+    text = build_instructions(make())
+    assert "propose_create_transaction(" in text
+    assert 'amount="250k"' in text  # truyền nguyên văn, tool tự đổi
+    assert "tự nhân" in text
+
+
+def test_tre_em_khong_de_xuat_thu_chi() -> None:
+    assert "propose_*_transaction" in build_instructions(make(role="child"))
