@@ -12,7 +12,9 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { FamilyDB, verifyPassword, getSessionSecret, getAppSettings, setAppSetting } from "./server/db.js";
 import { sqliteAppendServerMetric, sqliteGetServerMetrics } from "./server/sqlite.js";
-import { UserRole, isLimitedViewer, DishSlot, MealIngredient, DOCUMENT_TYPE_LABELS } from "./src/types.js";
+import { sanitizeTaskWrite } from "./server/permissions.js";
+import type { Task } from "./src/types.js";
+import { UserRole, DishSlot, MealIngredient, DOCUMENT_TYPE_LABELS } from "./src/types.js";
 import { buildPlanFromLibrary, dedupeAndAnnotateGroceries } from "./src/utils/mealPlan.js";
 import { normalizeSearchText, matchesQuery, excerptAround } from "./src/utils/searchText.js";
 import { canSeeTask, canSeePlan, canSeeFinance, Viewer } from "./src/utils/visibility.js";
@@ -911,26 +913,25 @@ app.get("/api/tasks", requireAuth, (req: AuthRequest, res: Response) => {
 app.post("/api/tasks", requireAuth, (req: AuthRequest, res: Response) => {
   const session = req.userSession!;
   
-  // Guard write permissions - Child/Guest can only edit tasks they created or are assigned to.
-  if (isLimitedViewer(session.role) && req.body.id && !req.body.comments) {
-    const existing = FamilyDB.getTasks().find(t => t.id === req.body.id);
-    if (existing && existing.creatorId !== session.userId && existing.assigneeId !== session.userId) {
-      res.status(403).json({ error: "Bạn chỉ được sửa đổi công việc do mình tạo hoặc được giao!" });
-      return;
-    }
+  // Kiểm quyền + làm sạch body: bỏ trường server quản lý, giới hạn trường trẻ/khách được ghi.
+  const existingTask = req.body.id ? FamilyDB.getTasks().find(t => t.id === req.body.id) : undefined;
+  const checked = sanitizeTaskWrite(req.body, existingTask, session);
+  if (checked.ok === false) {
+    res.status(403).json({ error: checked.error });
+    return;
   }
+  const taskInput = checked.data as Partial<Task>;
 
   // Chống 2 người cùng sửa đè nhau (chỉ khi form gửi kèm baseUpdatedAt)
-  if (req.body.id) {
-    const existing = FamilyDB.getTasks().find(t => t.id === req.body.id);
-    if (hasEditConflict(existing, req.body)) {
+  if (taskInput.id) {
+    if (hasEditConflict(existingTask, taskInput)) {
       res.status(409).json({ error: CONFLICT_MSG, conflict: true });
       return;
     }
   }
 
   try {
-    const savedTask = FamilyDB.saveTask(req.body, session.userId, session.username);
+    const savedTask = FamilyDB.saveTask(taskInput, session.userId, session.username);
     broadcastSyncEvent("TASKS_UPDATE", { taskId: savedTask.id });
     res.json({ task: savedTask });
   } catch (err: any) {
