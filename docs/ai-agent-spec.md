@@ -1,6 +1,6 @@
 # Spec — Trợ lý AI Agent (Pydantic AI + CodeMode)
 
-> Trạng thái: **Đã chốt hướng, chờ spike S1** · cập nhật 2026-10-10
+> Trạng thái: **Đã chốt hướng, chờ spike S1** · cập nhật 2026-10-10 (sau red-team — chi tiết trong `plans/261010-1652-ai-agent/plan.md`)
 > Thay thế: `/api/assistant/chat` hiện tại (một lần gọi Gemini, nhét 30 bản ghi vào prompt, không nhớ hội thoại).
 > Pattern tham khảo: `everfit/foundry/workers/program-copilot-ptc` (CodeMode + Monty, agent chỉ *lập kế hoạch*, người dùng duyệt rồi mới ghi).
 
@@ -32,7 +32,7 @@
 2. **Preview do code dựng, không do LLM viết.** Card xác nhận được Node render từ `operations` có kiểu chặt.
 3. **Dừng ngay khi đã có kết quả** (`EndWhenSettled`): có đề xuất hoặc cần hỏi lại → kết thúc lượt.
 4. **Tool tự hỏi lại** khi mơ hồ ("mẹ" khớp 2 người, "việc đi chợ" khớp 3 việc) thay vì để model đoán.
-5. **Quyền nằm ở server.** Tool đọc gọi API bằng token *của người hỏi*; lúc Duyệt, Node kiểm quyền *của người duyệt* bằng đúng luật của endpoint thường.
+5. **Quyền nằm ở server.** Tool đọc gọi API bằng token agent ngắn hạn, chỉ đọc, mang quyền *của người hỏi*; lúc Duyệt, Node kiểm quyền *của người duyệt* bằng đúng luật của endpoint thường.
 6. **Duyệt có khoá** (`planHash`) và **guard theo trạng thái hiện tại** (bản ghi bị người khác sửa sau khi đề xuất → không ghi đè).
 
 ## 3. Kiến trúc
@@ -58,7 +58,7 @@ Node: kiểm hash → kiểm quyền + guard từng operation → ghi qua Family
 
 ```yaml
   family-organizer-agent:
-    image: ghcr.io/happysmartlight/family-organizer-agent:${FAMILY_ORGANIZER_VERSION:-latest}
+    image: ghcr.io/happysmartlight/family-organizer-agent:${FAMILY_ORGANIZER_AGENT_VERSION:-latest}   # biến riêng, xem §3.2
     build: { context: ./agent }
     container_name: family_organizer_agent
     restart: unless-stopped
@@ -97,7 +97,7 @@ Node: kiểm hash → kiểm quyền + guard từng operation → ghi qua Family
   "message": "Tháng này mẹ chi bao nhiêu?",
   "history": [ /* ModelMessage JSON các lượt trước, tối đa 20 lượt */ ],
   "user": { "id": "user_x", "fullName": "…", "role": "member" },
-  "userToken": "<Bearer token của người hỏi>",
+  "agentToken": "<token ngắn hạn 120 s, chỉ GET trên 9 endpoint đọc — KHÔNG phải token đăng nhập>",
   "today": "2026-10-10", "weekday": "Thứ Bảy"
 }
 ```
@@ -214,14 +214,14 @@ agent = Agent(
 
 ## 9. Đề xuất & Duyệt (apply)
 
-Lưu trong DB (collection mới, thêm theo kiểu không phá bản cũ — `normalizeDB` mặc định `[]`):
+Lưu trong **`data/agent.db`** (file SQLite riêng, xem §10 — không vào `FamilyOrganizerDB` vì `sqliteSave` ghi lại toàn bộ collection mỗi lần ghi):
 
 ```ts
 interface AgentProposal {
   id: string; conversationId: string; userId: string;
   operations: AgentOperation[];      // discriminated union theo `type`; trường lạ bị loại
   planHash: string;                  // sha256(JSON chuẩn hoá của operations)
-  status: "pending" | "applied" | "partially_applied" | "cancelled" | "expired" | "failed";
+  status: "pending" | "applying" | "applied" | "cancelled" | "expired" | "failed";
   results?: { index: number; ok: boolean; id?: string; error?: string }[];
   createdAt: string; expiresAt: string;   // hết hạn sau 30 phút
   appliedAt?: string;
@@ -233,7 +233,7 @@ interface AgentProposal {
 2. **Kiểm trước toàn bộ** (dry-run), không ghi gì nếu có lỗi:
    - Quyền của người duyệt theo đúng luật endpoint gốc — tách thành hàm dùng chung `server/permissions.ts` (`canEditTask`, `canDeletePlan`, `canWriteFinance`…) để endpoint thường và apply không lệch nhau.
    - Guard: bản ghi còn tồn tại, `updatedAt`/`fingerprint` khớp `base` (người khác vừa sửa → 409 "dữ liệu đã thay đổi, hỏi lại trợ lý"), thành viên/hạng mục còn tồn tại.
-3. Ghi lần lượt qua các hàm `FamilyDB.save*/delete*` mà endpoint thường đang dùng (cùng validate, cùng ghi `history`, người thao tác = người duyệt), **đồng bộ trong một lượt event loop** (không `await` xen giữa) nên không request nào chen vào. Lỗi giữa chừng → dừng, `partially_applied` + `results` từng dòng.
+3. Chuyển `pending → applying` có điều kiện, rồi ghi **tất cả trong một transaction** (`FamilyDB.applyBatch`, dùng chung logic với `save*/delete*` của endpoint thường; người thao tác = người duyệt; ID mới có hậu tố ngẫu nhiên). Lỗi → không ghi gì, `failed`. App khởi động lại khi còn `applying` → `failed`, không chạy lại.
 4. `broadcastSyncEvent` cho từng module bị ảnh hưởng.
 5. Idempotent: gọi lại khi đã `applied` → trả kết quả cũ, không ghi lần hai.
 
@@ -253,7 +253,8 @@ interface AgentConversation {
 ```
 
 - Mỗi người chỉ thấy hội thoại của mình. Gửi **20 lượt gần nhất** cho agent; nút "Cuộc trò chuyện mới".
-- Xoá hội thoại không hoạt động > 30 ngày; proposal hết hạn dọn sau 7 ngày. Không đưa vào bản sao lưu Telegram.
+- Lưu ở **`data/agent.db`** riêng (bảng `agent_conversations`, `agent_proposals`): không làm chậm `sqliteSave` của dữ liệu chính, tự nằm ngoài bản sao lưu/snapshot cập nhật, bản cũ bỏ qua file này nên "Quay về" an toàn.
+- Xoá hội thoại không hoạt động > 30 ngày; proposal hết hạn dọn sau 7 ngày.
 
 ## 11. Cấu hình & bật tắt
 
@@ -265,7 +266,7 @@ interface AgentConversation {
 
 | Loại | Nội dung |
 | :--- | :--- |
-| Unit Node | `canSeeTask/canSeePlan` (Pha 0); `permissions.ts`; apply: hash sai, hết hạn, guard `updatedAt`/fingerprint lệch, thiếu quyền, idempotent, lỗi giữa chừng → `partially_applied` |
+| Unit Node | `canSeeTask/canSeePlan` (Pha 0); `permissions.ts`; apply: hash sai, hết hạn, guard `updatedAt`/fingerprint lệch, thiếu quyền, idempotent, ghi lỗi → không ghi gì |
 | Unit Python (pytest) | tool đọc (mock httpx), validate + `ask_user` của từng tool propose, `EndWhenSettled`, chuẩn hoá operation + `planHash` khớp với Node (test vector dùng chung) |
 | Phân quyền (bắt buộc) | con/khách hỏi chi tiêu → bị từ chối; member không thấy việc/lịch riêng của member khác; con đề xuất `finance.create` → apply 403; con sửa việc của người khác → 403 |
 | Hợp đồng | JSON schema cho `operations` dùng chung Node/Python (`agent/contracts/operations.schema.json`), test cả hai phía |
