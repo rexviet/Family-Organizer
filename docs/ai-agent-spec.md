@@ -158,7 +158,7 @@ Quy ước: tên tiếng Anh, **docstring tiếng Việt**, có kiểu trả v�
 | Module | Tool | Operation `type` | Quyền (kiểm lại lúc apply, đúng luật endpoint gốc) |
 | :--- | :--- | :--- | :--- |
 | Đi chợ | `propose_add_shopping_items(items)` | `shopping.add` | mọi role đã đăng nhập (như `POST /api/shopping`) |
-| | `propose_set_purchased(item_ids, purchased)` | `shopping.toggle` | như `POST /api/shopping/:id/toggle` |
+| | `propose_set_purchased(item_ids, purchased)` | `shopping.set_purchased` (đặt giá trị, không lật) | như `POST /api/shopping/:id/toggle` |
 | | `propose_remove_shopping_items(item_ids)` | `shopping.delete` | như `DELETE /api/shopping/:id` |
 | Việc | `propose_create_task(title, due?, assignee_id?, priority?, reward_points?, is_shared?, description?)` | `task.create` | như `POST /api/tasks` |
 | | `propose_update_task(task_id, changes)` — title/due/assignee/priority/status/description | `task.update` | con/khách chỉ việc mình tạo/được giao (`server.ts:911`) |
@@ -171,7 +171,7 @@ Quy ước: tên tiếng Anh, **docstring tiếng Việt**, có kiểu trả v�
 | | `propose_delete_transaction(tx_id)` | `finance.delete` | admin/member |
 
 - Mỗi tool **tự validate** (id tồn tại, thành viên đúng, ngày hợp lệ, `amount > 0`, category có thật, `end ≥ start`) và gọi `ask_user` nếu mơ hồ.
-- Tool `update`/`delete` lưu kèm **`base`** của bản ghi lúc đề xuất: `updatedAt` (task/plan) hoặc `fingerprint` = sha256 các trường chính (transaction, shopping — vì `FinancialTransaction` không có `updatedAt`).
+- Tool `update`/`delete` lưu kèm **`base`** của bản ghi lúc đề xuất: `updatedAt` (task, shopping) hoặc `fingerprint` = sha256 các trường chính (transaction, plan — vì `FinancialTransaction` và `FamilyPlan` không có `updatedAt`). Chi tiết hợp đồng: [agent/contracts/README.md](../agent/contracts/README.md).
 - Một lượt tối đa **10 operation**, một lần Duyệt.
 - **Không** có tool sửa `rewardPoints` của việc đã hoàn thành, duyệt/trả việc của trẻ, hay đổi người tạo.
 

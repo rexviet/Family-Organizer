@@ -25,5 +25,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Vector hợp đồng agent khớp bản cài Python
+        run: python3 agent/contracts/gen_vectors.py --check
       - name: Kiểm tra cú pháp shell
         run: sh -n deploy/updater.sh && bash -n scripts/release.sh

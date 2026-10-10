@@ -1,6 +1,6 @@
 # Phase 2 — Hợp đồng operation + planHash
 
-**Priority:** P1 · **Effort:** 4h · **Status:** Pending
+**Priority:** P1 · **Effort:** 4h · **Status:** Done (2026-10-10)
 
 ## Context Links
 - Spec §4, §6.2, §9
@@ -44,9 +44,21 @@ Một nguồn chân lý cho mọi operation mà agent (Python) sinh ra và Node 
 4. README hợp đồng: quy tắc đổi hợp đồng = thêm `version`, không sửa nghĩa trường cũ.
 
 ## Todo
-- [ ] Schema 12 operation
-- [ ] Vectors + script tính độc lập
-- [ ] `server/agentContract.ts` + test xanh
+- [x] Schema 12 operation
+- [x] Vectors + script tính độc lập (`agent/contracts/gen_vectors.py`, CI chạy `--check`)
+- [x] `server/agentContract.ts` + test xanh
+- [x] README hợp đồng
+
+## Quyết định khi cài (--auto)
+- `finance.create` dùng `txType` (`income|expense`) cho loại giao dịch — `type` đã là khoá phân biệt operation.
+- Không có `ajv` trong deps → validator tay (bộ con JSON Schema 2020-12) đọc **chính** `operations.schema.json`; gặp từ khoá chưa hỗ trợ thì ném lỗi lúc nạp module (không bỏ qua âm thầm). Lỗi theo đường dẫn `$[i].field`; `type` lạ báo một lỗi gọn.
+- `contractVersion` và `limits` (`maxOperations: 10`, `maxShoppingAddItemsTotal: 30`) là từ khoá chú thích trong schema; giới hạn 30 món kiểm ngoài schema.
+- Canonical: chỉ số nguyên an toàn (số thực → lỗi), key theo code point, chuỗi có surrogate lẻ → lỗi, không chuẩn hoá Unicode. Fingerprint: trường thiếu = `null`.
+- Ràng buộc độ dài/định dạng thêm (id ≤ 100, tiêu đề 1–200, `amount` 1…10^12, pattern ngày chỉ `[0-9]`, `rewardPoints` 0–1000).
+- Vectors có thêm mục `canonical` (escape, sắp key) và `invalid` (25 ca) để bản Python kiểm cả validator.
+- Dockerfile copy `agent/contracts/` để bundle server khi phase 5 import schema.
+
+- Code review (6.5/10 lần đầu) bắt lỗi **critical**: `k in props` dò prototype → `constructor`/`__proto__` lọt qua `additionalProperties: false`. Đã sửa: `Object.hasOwn`, validator trả **bản sao** dựng từ canonical, chạy canonical trong validate (surrogate lẻ bị từ chối), dừng sớm khi vượt `maxItems`/`maxLength`, tối đa 50 lỗi; thêm vector tương ứng.
 
 ## Success Criteria
 `npm test` xanh với vectors; tài liệu đủ để phía Python cài lại độc lập.

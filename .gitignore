@@ -19,3 +19,7 @@ data/
 
 # Script dịch vụ cập nhật (bản cài riêng tự tải về khi chạy compose)
 updater/
+
+# Python
+__pycache__/
+*.pyc

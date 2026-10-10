@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://family-organizer.local/agent/contracts/operations.schema.json",
+  "title": "Danh sách operation agent đề xuất (một proposal)",
+  "description": "Nguồn chân lý chung cho agent (Python) và Node. Đổi hợp đồng: xem README.md cùng thư mục.",
+  "contractVersion": 1,
+  "limits": { "maxOperations": 10, "maxShoppingAddItemsTotal": 30 },
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 10,
+  "items": {
+    "oneOf": [
+      { "$ref": "#/$defs/shopping.add" },
+      { "$ref": "#/$defs/shopping.set_purchased" },
+      { "$ref": "#/$defs/shopping.delete" },
+      { "$ref": "#/$defs/task.create" },
+      { "$ref": "#/$defs/task.update" },
+      { "$ref": "#/$defs/task.delete" },
+      { "$ref": "#/$defs/plan.create" },
+      { "$ref": "#/$defs/plan.update" },
+      { "$ref": "#/$defs/plan.delete" },
+      { "$ref": "#/$defs/finance.create" },
+      { "$ref": "#/$defs/finance.update" },
+      { "$ref": "#/$defs/finance.delete" }
+    ]
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "maxLength": 2000 },
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "dateTime": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}$" },
+    "dueDate": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}( [0-9]{2}:[0-9]{2})?$" },
+    "assigneeId": { "type": ["string", "null"], "minLength": 1, "maxLength": 100 },
+    "priority": { "enum": ["low", "medium", "high"] },
+    "rewardPoints": { "type": "integer", "minimum": 0, "maximum": 1000 },
+    "recurrenceType": { "enum": ["none", "daily", "weekly", "monthly", "yearly"] },
+    "recurrenceWeekdays": {
+      "type": "array",
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": { "type": "integer", "minimum": 0, "maximum": 6 }
+    },
+    "amount": { "type": "integer", "minimum": 1, "maximum": 1000000000000 },
+    "category": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "account": { "enum": ["cash", "bank", "e_wallet"] },
+    "baseUpdatedAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["updatedAt"],
+      "properties": { "updatedAt": { "type": "string", "minLength": 1, "maxLength": 40 } }
+    },
+    "baseFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint"],
+      "properties": { "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" } }
+    },
+
+    "shopping.add": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "shopping.add" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+              "quantity": { "type": "string", "maxLength": 50 },
+              "note": { "type": "string", "maxLength": 200 }
+            }
+          }
+        }
+      }
+    },
+    "shopping.set_purchased": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "itemId", "purchased", "base"],
+      "properties": {
+        "type": { "const": "shopping.set_purchased" },
+        "itemId": { "$ref": "#/$defs/id" },
+        "purchased": { "type": "boolean" },
+        "base": { "$ref": "#/$defs/baseUpdatedAt" }
+      }
+    },
+    "shopping.delete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "itemId", "base"],
+      "properties": {
+        "type": { "const": "shopping.delete" },
+        "itemId": { "$ref": "#/$defs/id" },
+        "base": { "$ref": "#/$defs/baseUpdatedAt" }
+      }
+    },
+
+    "task.create": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "title"],
+      "properties": {
+        "type": { "const": "task.create" },
+        "title": { "$ref": "#/$defs/title" },
+        "description": { "$ref": "#/$defs/description" },
+        "dueDate": { "$ref": "#/$defs/dueDate" },
+        "assigneeId": { "$ref": "#/$defs/assigneeId" },
+        "priority": { "$ref": "#/$defs/priority" },
+        "rewardPoints": { "$ref": "#/$defs/rewardPoints" },
+        "isShared": { "type": "boolean" }
+      }
+    },
+    "task.update": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "taskId", "changes", "base"],
+      "properties": {
+        "type": { "const": "task.update" },
+        "taskId": { "$ref": "#/$defs/id" },
+        "changes": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "title": { "$ref": "#/$defs/title" },
+            "description": { "$ref": "#/$defs/description" },
+            "dueDate": { "$ref": "#/$defs/dueDate" },
+            "assigneeId": { "$ref": "#/$defs/assigneeId" },
+            "priority": { "$ref": "#/$defs/priority" },
+            "status": { "enum": ["todo", "in_progress"] }
+          }
+        },
+        "base": { "$ref": "#/$defs/baseUpdatedAt" }
+      }
+    },
+    "task.delete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "taskId", "base"],
+      "properties": {
+        "type": { "const": "task.delete" },
+        "taskId": { "$ref": "#/$defs/id" },
+        "base": { "$ref": "#/$defs/baseUpdatedAt" }
+      }
+    },
+
+    "plan.create": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "title", "startDate", "endDate"],
+      "properties": {
+        "type": { "const": "plan.create" },
+        "title": { "$ref": "#/$defs/title" },
+        "description": { "$ref": "#/$defs/description" },
+        "startDate": { "$ref": "#/$defs/dateTime" },
+        "endDate": { "$ref": "#/$defs/dateTime" },
+        "isShared": { "type": "boolean" },
+        "recurrenceType": { "$ref": "#/$defs/recurrenceType" },
+        "recurrenceWeekdays": { "$ref": "#/$defs/recurrenceWeekdays" }
+      }
+    },
+    "plan.update": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "planId", "changes", "base"],
+      "properties": {
+        "type": { "const": "plan.update" },
+        "planId": { "$ref": "#/$defs/id" },
+        "changes": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "title": { "$ref": "#/$defs/title" },
+            "description": { "$ref": "#/$defs/description" },
+            "startDate": { "$ref": "#/$defs/dateTime" },
+            "endDate": { "$ref": "#/$defs/dateTime" },
+            "isShared": { "type": "boolean" },
+            "recurrenceType": { "$ref": "#/$defs/recurrenceType" },
+            "recurrenceWeekdays": { "$ref": "#/$defs/recurrenceWeekdays" }
+          }
+        },
+        "base": { "$ref": "#/$defs/baseFingerprint" }
+      }
+    },
+    "plan.delete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "planId", "base"],
+      "properties": {
+        "type": { "const": "plan.delete" },
+        "planId": { "$ref": "#/$defs/id" },
+        "base": { "$ref": "#/$defs/baseFingerprint" }
+      }
+    },
+
+    "finance.create": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "txType", "amount", "category", "date", "description"],
+      "properties": {
+        "type": { "const": "finance.create" },
+        "txType": { "enum": ["income", "expense"] },
+        "amount": { "$ref": "#/$defs/amount" },
+        "category": { "$ref": "#/$defs/category" },
+        "date": { "$ref": "#/$defs/date" },
+        "description": { "type": "string", "maxLength": 500 },
+        "account": { "$ref": "#/$defs/account" }
+      }
+    },
+    "finance.update": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "txId", "changes", "base"],
+      "properties": {
+        "type": { "const": "finance.update" },
+        "txId": { "$ref": "#/$defs/id" },
+        "changes": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "amount": { "$ref": "#/$defs/amount" },
+            "category": { "$ref": "#/$defs/category" },
+            "date": { "$ref": "#/$defs/date" },
+            "description": { "type": "string", "maxLength": 500 },
+            "account": { "$ref": "#/$defs/account" }
+          }
+        },
+        "base": { "$ref": "#/$defs/baseFingerprint" }
+      }
+    },
+    "finance.delete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "txId", "base"],
+      "properties": {
+        "type": { "const": "finance.delete" },
+        "txId": { "$ref": "#/$defs/id" },
+        "base": { "$ref": "#/$defs/baseFingerprint" }
+      }
+    }
+  }
+}

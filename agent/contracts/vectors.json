@@ -1,0 +1,931 @@
+{
+  "contractVersion": 1,
+  "canonical": [
+    {
+      "name": "key sắp xếp theo code point, chữ hoa trước chữ thường",
+      "value": {
+        "b": 1,
+        "B": 2,
+        "a": {
+          "z": true,
+          "c": null
+        },
+        "_": []
+      },
+      "canonical": "{\"B\":2,\"_\":[],\"a\":{\"c\":null,\"z\":true},\"b\":1}"
+    },
+    {
+      "name": "escape tối thiểu, tiếng Việt và emoji để nguyên UTF-8",
+      "value": {
+        "s": "Mẹ nói: \"đi chợ\"\\n\t\n\r\b\f\u0001\u001f/   🛒 Ơ ư"
+      },
+      "canonical": "{\"s\":\"Mẹ nói: \\\"đi chợ\\\"\\\\n\\t\\n\\r\\b\\f\\u0001\\u001f/   🛒 Ơ ư\"}"
+    },
+    {
+      "name": "số nguyên âm, 0, lớn nhất an toàn",
+      "value": [
+        -5,
+        0,
+        9007199254740991,
+        false
+      ],
+      "canonical": "[-5,0,9007199254740991,false]"
+    },
+    {
+      "name": "key astral (😀) xếp sau key U+FF61 theo code point (UTF-16 code unit thì ngược lại)",
+      "value": {
+        "😀": 1,
+        "｡": 2,
+        "a\u0000": 3,
+        "a": 4,
+        "": 5
+      },
+      "canonical": "{\"\":5,\"a\":4,\"a\\u0000\":3,\"｡\":2,\"😀\":1}"
+    },
+    {
+      "name": "không chuẩn hoá Unicode: NFC và NFD là hai chuỗi khác nhau",
+      "value": [
+        "Việt",
+        "Việt"
+      ],
+      "canonical": "[\"Việt\",\"Việt\"]"
+    }
+  ],
+  "planHash": [
+    {
+      "name": "đi chợ thêm 3 món có dấu",
+      "operations": [
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "Sữa tươi",
+              "quantity": "2 hộp"
+            },
+            {
+              "name": "Trứng gà",
+              "quantity": "10 quả",
+              "note": "loại to"
+            },
+            {
+              "name": "Rau muống"
+            }
+          ]
+        }
+      ],
+      "canonical": "[{\"items\":[{\"name\":\"Sữa tươi\",\"quantity\":\"2 hộp\"},{\"name\":\"Trứng gà\",\"note\":\"loại to\",\"quantity\":\"10 quả\"},{\"name\":\"Rau muống\"}],\"type\":\"shopping.add\"}]",
+      "planHash": "2ccb929c21e2e72a25c28695621bf1e675093115d01176751a1cc29672ecc87a"
+    },
+    {
+      "name": "đánh dấu đã mua + xoá món",
+      "operations": [
+        {
+          "type": "shopping.set_purchased",
+          "itemId": "shop_1728550000000_ab12",
+          "purchased": true,
+          "base": {
+            "updatedAt": "2026-10-10T08:15:00.000Z"
+          }
+        },
+        {
+          "type": "shopping.delete",
+          "itemId": "shop_1728550000001_cd34",
+          "base": {
+            "updatedAt": "2026-10-09T23:59:59.999Z"
+          }
+        }
+      ],
+      "canonical": "[{\"base\":{\"updatedAt\":\"2026-10-10T08:15:00.000Z\"},\"itemId\":\"shop_1728550000000_ab12\",\"purchased\":true,\"type\":\"shopping.set_purchased\"},{\"base\":{\"updatedAt\":\"2026-10-09T23:59:59.999Z\"},\"itemId\":\"shop_1728550000001_cd34\",\"type\":\"shopping.delete\"}]",
+      "planHash": "3bc2218d11682b6adc7f7946a84732f3b94705fc519f1986c46c714c85fc42a0"
+    },
+    {
+      "name": "tạo việc đủ trường",
+      "operations": [
+        {
+          "type": "task.create",
+          "title": "Đón con ở trường",
+          "description": "Cổng sau, 17h",
+          "dueDate": "2026-10-11 17:00",
+          "assigneeId": "user_bin",
+          "priority": "high",
+          "rewardPoints": 5,
+          "isShared": false
+        }
+      ],
+      "canonical": "[{\"assigneeId\":\"user_bin\",\"description\":\"Cổng sau, 17h\",\"dueDate\":\"2026-10-11 17:00\",\"isShared\":false,\"priority\":\"high\",\"rewardPoints\":5,\"title\":\"Đón con ở trường\",\"type\":\"task.create\"}]",
+      "planHash": "f0dbe9eaff9c6c0119ffed3b83b08668a368240e197aecf6c35ce7538fb4efde"
+    },
+    {
+      "name": "sửa việc: bỏ giao người, đổi trạng thái",
+      "operations": [
+        {
+          "type": "task.update",
+          "taskId": "task_42",
+          "changes": {
+            "assigneeId": null,
+            "status": "in_progress",
+            "dueDate": "2026-10-12"
+          },
+          "base": {
+            "updatedAt": "2026-10-10T01:02:03.004Z"
+          }
+        }
+      ],
+      "canonical": "[{\"base\":{\"updatedAt\":\"2026-10-10T01:02:03.004Z\"},\"changes\":{\"assigneeId\":null,\"dueDate\":\"2026-10-12\",\"status\":\"in_progress\"},\"taskId\":\"task_42\",\"type\":\"task.update\"}]",
+      "planHash": "161f23a9ee752e86c33875479bf0501dea4ac41456f1f5014ded3a57b994505c"
+    },
+    {
+      "name": "xoá việc",
+      "operations": [
+        {
+          "type": "task.delete",
+          "taskId": "task_43",
+          "base": {
+            "updatedAt": "2026-10-10T01:02:03.004Z"
+          }
+        }
+      ],
+      "canonical": "[{\"base\":{\"updatedAt\":\"2026-10-10T01:02:03.004Z\"},\"taskId\":\"task_43\",\"type\":\"task.delete\"}]",
+      "planHash": "0e0a7338f8c7bea99ed6487237e593a0590082aee6dd5a50d4d1e382ce449362"
+    },
+    {
+      "name": "tạo lịch lặp hằng tuần",
+      "operations": [
+        {
+          "type": "plan.create",
+          "title": "Học bơi",
+          "startDate": "2026-10-12 18:00",
+          "endDate": "2026-10-12 19:30",
+          "isShared": true,
+          "recurrenceType": "weekly",
+          "recurrenceWeekdays": [
+            1,
+            3,
+            5
+          ]
+        }
+      ],
+      "canonical": "[{\"endDate\":\"2026-10-12 19:30\",\"isShared\":true,\"recurrenceType\":\"weekly\",\"recurrenceWeekdays\":[1,3,5],\"startDate\":\"2026-10-12 18:00\",\"title\":\"Học bơi\",\"type\":\"plan.create\"}]",
+      "planHash": "c3e47b8a49e4962dcd7daaeeafa36f72ab161c220f9556b8f9b9bce8f1d67369"
+    },
+    {
+      "name": "sửa + xoá lịch theo fingerprint",
+      "operations": [
+        {
+          "type": "plan.update",
+          "planId": "plan_7",
+          "changes": {
+            "title": "Họp phụ huynh lớp 3A",
+            "description": ""
+          },
+          "base": {
+            "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        },
+        {
+          "type": "plan.delete",
+          "planId": "plan_8",
+          "base": {
+            "fingerprint": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        }
+      ],
+      "canonical": "[{\"base\":{\"fingerprint\":\"0000000000000000000000000000000000000000000000000000000000000000\"},\"changes\":{\"description\":\"\",\"title\":\"Họp phụ huynh lớp 3A\"},\"planId\":\"plan_7\",\"type\":\"plan.update\"},{\"base\":{\"fingerprint\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"},\"planId\":\"plan_8\",\"type\":\"plan.delete\"}]",
+      "planHash": "9923228b9147d050fc230f2bde76d3f3b94af03352e00f182bb011f60669b3e3"
+    },
+    {
+      "name": "thu chi: tạo, sửa, xoá",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": 250000,
+          "category": "Ăn uống",
+          "date": "2026-10-09",
+          "description": "Phở bò cả nhà",
+          "account": "cash"
+        },
+        {
+          "type": "finance.update",
+          "txId": "tx_9",
+          "changes": {
+            "amount": 1200000,
+            "description": "Tiền điện tháng 9"
+          },
+          "base": {
+            "fingerprint": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        },
+        {
+          "type": "finance.delete",
+          "txId": "tx_10",
+          "base": {
+            "fingerprint": "2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        }
+      ],
+      "canonical": "[{\"account\":\"cash\",\"amount\":250000,\"category\":\"Ăn uống\",\"date\":\"2026-10-09\",\"description\":\"Phở bò cả nhà\",\"txType\":\"expense\",\"type\":\"finance.create\"},{\"base\":{\"fingerprint\":\"1111111111111111111111111111111111111111111111111111111111111111\"},\"changes\":{\"amount\":1200000,\"description\":\"Tiền điện tháng 9\"},\"txId\":\"tx_9\",\"type\":\"finance.update\"},{\"base\":{\"fingerprint\":\"2222222222222222222222222222222222222222222222222222222222222222\"},\"txId\":\"tx_10\",\"type\":\"finance.delete\"}]",
+      "planHash": "bea2bfaa9009eacd73b918ea147926af2b7f19b7890d820797abf06ce4ed555c"
+    },
+    {
+      "name": "thứ tự operation khác nhau thì hash khác (thứ tự có nghĩa)",
+      "operations": [
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "Rau muống"
+            }
+          ]
+        },
+        {
+          "type": "task.delete",
+          "taskId": "task_43",
+          "base": {
+            "updatedAt": "2026-10-10T01:02:03.004Z"
+          }
+        }
+      ],
+      "canonical": "[{\"items\":[{\"name\":\"Rau muống\"}],\"type\":\"shopping.add\"},{\"base\":{\"updatedAt\":\"2026-10-10T01:02:03.004Z\"},\"taskId\":\"task_43\",\"type\":\"task.delete\"}]",
+      "planHash": "e9efdf7511b744bce8b4d1b60d0cacae20da5bcde2f9c7ed18831b7d8da90ed5"
+    },
+    {
+      "name": "thứ tự operation khác nhau thì hash khác (đảo)",
+      "operations": [
+        {
+          "type": "task.delete",
+          "taskId": "task_43",
+          "base": {
+            "updatedAt": "2026-10-10T01:02:03.004Z"
+          }
+        },
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "Rau muống"
+            }
+          ]
+        }
+      ],
+      "canonical": "[{\"base\":{\"updatedAt\":\"2026-10-10T01:02:03.004Z\"},\"taskId\":\"task_43\",\"type\":\"task.delete\"},{\"items\":[{\"name\":\"Rau muống\"}],\"type\":\"shopping.add\"}]",
+      "planHash": "bd9b34979a18074fabf843e8ed2836fb0850aac3bdf73891566d3e94f9df98c9"
+    }
+  ],
+  "fingerprint": [
+    {
+      "name": "giao dịch chi đủ trường, có trường thừa bị bỏ qua",
+      "kind": "transaction",
+      "record": {
+        "id": "tx_9",
+        "type": "expense",
+        "amount": 250000,
+        "category": "Ăn uống",
+        "account": "cash",
+        "description": "Phở bò cả nhà",
+        "date": "2026-10-09",
+        "creatorId": "user_me",
+        "receiptImage": "data:image/png;base64,AAAA",
+        "createdAt": "2026-10-09T12:00:00.000Z"
+      },
+      "fingerprint": "f57f89349c8d049910641015e95b8646e9b606ae8a5f42df1f61a8f481817e0a"
+    },
+    {
+      "name": "giao dịch thu, mô tả rỗng",
+      "kind": "transaction",
+      "record": {
+        "id": "tx_11",
+        "type": "income",
+        "amount": 15000000,
+        "category": "Lương",
+        "account": "bank",
+        "description": "",
+        "date": "2026-10-01",
+        "creatorId": "user_me",
+        "createdAt": "2026-10-01T02:00:00.000Z"
+      },
+      "fingerprint": "8c81e1e1626d037f9647874e930f22fd712b5e8148bb820f95b8706ec62d8d02"
+    },
+    {
+      "name": "giao dịch thiếu account (dữ liệu cũ) → null",
+      "kind": "transaction",
+      "record": {
+        "id": "tx_12",
+        "type": "expense",
+        "amount": 30000,
+        "category": "Đi lại",
+        "description": "Gửi xe",
+        "date": "2026-10-02"
+      },
+      "fingerprint": "b9606c4fee96298d172bb731883a61486f02082cc04311a0691b02a2c40d12cb"
+    },
+    {
+      "name": "lịch một lần",
+      "kind": "plan",
+      "record": {
+        "id": "plan_7",
+        "title": "Họp phụ huynh",
+        "description": "Phòng 204, mang sổ liên lạc",
+        "startDate": "2026-10-15 19:00",
+        "endDate": "2026-10-15 20:30",
+        "isRecurring": false,
+        "recurrenceType": "none",
+        "creatorId": "user_me",
+        "isShared": true,
+        "color": "sky",
+        "createdAt": "2026-10-01T00:00:00.000Z"
+      },
+      "fingerprint": "f409c04d6f5631ceed2b2d323e9a128eadd67eb16f6535e3f2f40aa084dc8fea"
+    },
+    {
+      "name": "lịch lặp có recurrenceWeekdays",
+      "kind": "plan",
+      "record": {
+        "id": "plan_8",
+        "title": "Học bơi",
+        "description": "",
+        "startDate": "2026-10-12 18:00",
+        "endDate": "2026-10-12 19:30",
+        "isRecurring": true,
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          1,
+          3,
+          5
+        ],
+        "creatorId": "user_bin",
+        "isShared": false,
+        "color": "emerald",
+        "createdAt": "2026-10-01T00:00:00.000Z"
+      },
+      "fingerprint": "3501b3e265d72a7d493179b0724b30513d19333c5315f8a1251161b671b04970"
+    },
+    {
+      "name": "lịch chỉ khác màu → fingerprint khác",
+      "kind": "plan",
+      "record": {
+        "id": "plan_8",
+        "title": "Học bơi",
+        "description": "",
+        "startDate": "2026-10-12 18:00",
+        "endDate": "2026-10-12 19:30",
+        "isRecurring": true,
+        "recurrenceType": "weekly",
+        "recurrenceWeekdays": [
+          1,
+          3,
+          5
+        ],
+        "creatorId": "user_bin",
+        "isShared": false,
+        "color": "rose",
+        "createdAt": "2026-10-01T00:00:00.000Z"
+      },
+      "fingerprint": "3cb145452cea7b0bab484f70b92e12e77c8e6b359d320dd6b92d1febb49090b4"
+    },
+    {
+      "name": "giao dịch chỉ khác creatorId/createdAt → fingerprint như tx_9",
+      "kind": "transaction",
+      "record": {
+        "id": "tx_9",
+        "type": "expense",
+        "amount": 250000,
+        "category": "Ăn uống",
+        "account": "cash",
+        "description": "Phở bò cả nhà",
+        "date": "2026-10-09",
+        "creatorId": "user_other",
+        "createdAt": "2020-01-01T00:00:00.000Z"
+      },
+      "fingerprint": "f57f89349c8d049910641015e95b8646e9b606ae8a5f42df1f61a8f481817e0a"
+    },
+    {
+      "name": "lịch thiếu recurrenceWeekdays và color → null",
+      "kind": "plan",
+      "record": {
+        "id": "plan_9",
+        "title": "Giỗ ông",
+        "description": "Về quê",
+        "startDate": "2026-11-20 08:00",
+        "endDate": "2026-11-20 17:00",
+        "isRecurring": true,
+        "recurrenceType": "yearly",
+        "isShared": true
+      },
+      "fingerprint": "910ed2630690656a32f681d89ff8e2d951492ed41df9621c71c747474d8e935b"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "mảng rỗng",
+      "operations": []
+    },
+    {
+      "name": "quá 10 operation",
+      "operations": [
+        {
+          "type": "task.delete",
+          "taskId": "t1",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t2",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t3",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t4",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t5",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t6",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t7",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t8",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t9",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t10",
+          "base": {
+            "updatedAt": "x"
+          }
+        },
+        {
+          "type": "task.delete",
+          "taskId": "t11",
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "type lạ",
+      "operations": [
+        {
+          "type": "shopping.toggle",
+          "itemId": "s1",
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "thiếu type",
+      "operations": [
+        {
+          "itemId": "s1"
+        }
+      ]
+    },
+    {
+      "name": "trường lạ ở gốc operation",
+      "operations": [
+        {
+          "type": "task.delete",
+          "taskId": "t1",
+          "base": {
+            "updatedAt": "x"
+          },
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "trường lạ trong món đi chợ",
+      "operations": [
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "Sữa",
+              "price": 30000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "trường lạ trong base",
+      "operations": [
+        {
+          "type": "task.delete",
+          "taskId": "t1",
+          "base": {
+            "updatedAt": "x",
+            "fingerprint": "y"
+          }
+        }
+      ]
+    },
+    {
+      "name": "amount âm",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": -1000,
+          "category": "Ăn uống",
+          "date": "2026-10-09",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "amount = 0",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": 0,
+          "category": "Ăn uống",
+          "date": "2026-10-09",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "amount số thực",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": 1000.5,
+          "category": "Ăn uống",
+          "date": "2026-10-09",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "amount là chuỗi",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": "1000",
+          "category": "Ăn uống",
+          "date": "2026-10-09",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "txType lạ",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "transfer",
+          "amount": 1000,
+          "category": "Ăn uống",
+          "date": "2026-10-09",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "task.update đặt completed (cấm — tương đương duyệt việc)",
+      "operations": [
+        {
+          "type": "task.update",
+          "taskId": "t1",
+          "changes": {
+            "status": "completed"
+          },
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "task.update sửa rewardPoints (không có trong changes)",
+      "operations": [
+        {
+          "type": "task.update",
+          "taskId": "t1",
+          "changes": {
+            "rewardPoints": 100
+          },
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "task.update changes rỗng",
+      "operations": [
+        {
+          "type": "task.update",
+          "taskId": "t1",
+          "changes": {},
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "plan.update dùng updatedAt thay vì fingerprint",
+      "operations": [
+        {
+          "type": "plan.update",
+          "planId": "p1",
+          "changes": {
+            "title": "x"
+          },
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "fingerprint không phải hex 64 ký tự thường",
+      "operations": [
+        {
+          "type": "plan.delete",
+          "planId": "p1",
+          "base": {
+            "fingerprint": "ABC"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ngày sai định dạng",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": 1000,
+          "category": "Ăn uống",
+          "date": "09/10/2026",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "ngày dùng chữ số không phải ASCII",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": 1000,
+          "category": "Ăn uống",
+          "date": "٢٠٢٦-10-09",
+          "description": "x"
+        }
+      ]
+    },
+    {
+      "name": "recurrenceWeekdays trùng",
+      "operations": [
+        {
+          "type": "plan.create",
+          "title": "x",
+          "startDate": "2026-10-12 18:00",
+          "endDate": "2026-10-12 19:00",
+          "recurrenceWeekdays": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shopping.add 0 món",
+      "operations": [
+        {
+          "type": "shopping.add",
+          "items": []
+        }
+      ]
+    },
+    {
+      "name": "tổng món shopping.add vượt 30",
+      "operations": [
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "a1"
+            },
+            {
+              "name": "a2"
+            },
+            {
+              "name": "a3"
+            },
+            {
+              "name": "a4"
+            },
+            {
+              "name": "a5"
+            },
+            {
+              "name": "a6"
+            },
+            {
+              "name": "a7"
+            },
+            {
+              "name": "a8"
+            },
+            {
+              "name": "a9"
+            },
+            {
+              "name": "a10"
+            },
+            {
+              "name": "a11"
+            },
+            {
+              "name": "a12"
+            },
+            {
+              "name": "a13"
+            },
+            {
+              "name": "a14"
+            },
+            {
+              "name": "a15"
+            },
+            {
+              "name": "a16"
+            }
+          ]
+        },
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "b1"
+            },
+            {
+              "name": "b2"
+            },
+            {
+              "name": "b3"
+            },
+            {
+              "name": "b4"
+            },
+            {
+              "name": "b5"
+            },
+            {
+              "name": "b6"
+            },
+            {
+              "name": "b7"
+            },
+            {
+              "name": "b8"
+            },
+            {
+              "name": "b9"
+            },
+            {
+              "name": "b10"
+            },
+            {
+              "name": "b11"
+            },
+            {
+              "name": "b12"
+            },
+            {
+              "name": "b13"
+            },
+            {
+              "name": "b14"
+            },
+            {
+              "name": "b15"
+            }
+          ]
+        }
+      ],
+      "rule": "limits.maxShoppingAddItemsTotal (schema JSON thuần không diễn đạt được — validator phải tự kiểm)"
+    },
+    {
+      "name": "operation không phải object",
+      "operations": [
+        "shopping.add"
+      ]
+    },
+    {
+      "name": "isShared là chuỗi",
+      "operations": [
+        {
+          "type": "task.create",
+          "title": "x",
+          "isShared": "true"
+        }
+      ]
+    },
+    {
+      "name": "tiêu đề rỗng",
+      "operations": [
+        {
+          "type": "task.create",
+          "title": ""
+        }
+      ]
+    },
+    {
+      "name": "key trùng thuộc tính Object.prototype trong changes",
+      "operations": [
+        {
+          "type": "task.update",
+          "taskId": "t1",
+          "changes": {
+            "title": "a",
+            "constructor": {
+              "status": "completed"
+            }
+          },
+          "base": {
+            "updatedAt": "x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "key toString/hasOwnProperty trong món đi chợ",
+      "operations": [
+        {
+          "type": "shopping.add",
+          "items": [
+            {
+              "name": "a",
+              "toString": "x",
+              "hasOwnProperty": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ngày có xuống dòng ở cuối (Python: dùng fullmatch, không dùng $)",
+      "operations": [
+        {
+          "type": "finance.create",
+          "txType": "expense",
+          "amount": 1000,
+          "category": "Ăn uống",
+          "date": "2026-10-09\n",
+          "description": "x"
+        }
+      ]
+    }
+  ]
+}

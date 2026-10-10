@@ -19,6 +19,8 @@ COPY public/ ./public/
 COPY src/ ./src/
 COPY server.ts ./
 COPY server/ ./server/
+# Hợp đồng agent (schema JSON được bundle vào server)
+COPY agent/contracts/ ./agent/contracts/
 
 # Build client bundle and compile server script
 RUN npm run build

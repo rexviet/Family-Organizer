@@ -29,7 +29,7 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Spike: Monty arm64, RAM, model](./phase-01-spike.md) | Done — GO (RAM Pi đo ở phase 7) |
-| 2 | [Hợp đồng operation + planHash](./phase-02-contracts.md) | Pending |
+| 2 | [Hợp đồng operation + planHash](./phase-02-contracts.md) | Done |
 | 3 | [Agent service (Python) khung](./phase-03-agent-service.md) | Pending |
 | 4 | [Agent harness: tool đọc, hỏi lại, đề xuất đi chợ](./phase-04-agent-harness.md) | Pending |
 | 5 | [Node: proxy, lưu trữ, Duyệt/apply](./phase-05-node-integration.md) | Pending |
