@@ -1,7 +1,7 @@
 ---
 title: "Trợ lý AI Agent (Pydantic AI + CodeMode)"
 description: "Thay /api/assistant/chat bằng agent chạy container riêng, đọc/ghi Đi chợ, Việc, Lịch, Thu chi qua API có sẵn; agent chỉ đề xuất, người dùng Duyệt thì Node mới ghi."
-status: awaiting-release
+status: released-pending-pi
 priority: P2
 effort: 68h
 branch: main
@@ -35,10 +35,10 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | 5 | [Node: proxy, lưu trữ, Duyệt/apply](./phase-05-node-integration.md) | Done — E2E thật: đề xuất → Duyệt → món ở Đi chợ + SSE |
 | 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
 | 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Code done — updater 6 ca E2E local; chờ người dùng phát hành 1.2.0; thử + đo RAM trên Pi hoãn tới lần triển khai đầu |
-| 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; chờ người dùng phát hành 1.3.0 (sau 1.2.0); model thật `kr/deepseek-3.2` 7/10 & 8/10, 0 ghi — đạt |
-| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 578 pytest; eval đợt 1: deepseek-3.2 77%/84%, haiku-4.5 75%/74% strict; đợt 2 đã sửa bộ câu + prompt/tool (`8bb4a81`), đo lại đầy đủ bị chặn (router hết hạn mức tháng) — **người dùng chấp nhận hiện trạng 2026-10-11** (84% strict, 86–91% trừ lỗi bộ chấm); 0 sai số tiền, 0 ghi ở mọi lần; chờ người dùng phát hành 1.4.0 (sau 1.3.0); assistant cũ giữ lại |
+| 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11); model thật `kr/deepseek-3.2` 7/10 & 8/10, 0 ghi — đạt |
+| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 578 pytest; eval đợt 1: deepseek-3.2 77%/84%, haiku-4.5 75%/74% strict; đợt 2 đã sửa bộ câu + prompt/tool (`8bb4a81`), đo lại đầy đủ bị chặn (router hết hạn mức tháng) — **người dùng chấp nhận hiện trạng 2026-10-11** (84% strict, 86–91% trừ lỗi bộ chấm); 0 sai số tiền, 0 ghi ở mọi lần; đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11); assistant cũ giữ lại |
 
-**Trạng thái (2026-10-11):** mọi phase đã code xong và đã eval với model thật. Kết quả eval phase 9 (84% strict, 86–91% sau khi trừ lỗi bộ chấm) được **người dùng chấp nhận**; nên đo lại code cuối khi router có hạn mức (lệnh trong [báo cáo](./reports/phase-09-eval.md)). Còn lại, đều do người dùng: (1) phát hành 1.2.0 → 1.3.0 → 1.4.0 (`npm run release`); (2) đo RAM + thử cập nhật/Quay về trên Pi ở lần triển khai đầu.
+**Trạng thái (2026-10-11):** mọi phase đã code xong và đã eval với model thật. Kết quả eval phase 9 (84% strict, 86–91% sau khi trừ lỗi bộ chấm) được **người dùng chấp nhận**; nên đo lại code cuối khi router có hạn mức (lệnh trong [báo cáo](./reports/phase-09-eval.md)). **Đã phát hành v1.2.0** (gộp M1–M3) trên fork `rexviet/Family-Organizer` — image `ghcr.io/rexviet/*:1.2.0`. Còn lại, đều do người dùng: đo RAM + thử cập nhật/Quay về trên Pi ở lần triển khai đầu (lưu ý compose/updater còn trỏ `happysmartlight`).
 Phase 8 đạt; phase 9 an toàn đạt (0 sai số tiền, 0 ghi) ở mọi lần đo.
 
 Thứ tự: 1 → 2 → (3 → 4) ‖ 5 → 6 → 7 → phát hành M1 → 8 → M2 → 9 → M3.

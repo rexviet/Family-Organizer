@@ -1,6 +1,6 @@
 # Phase 8 — Ghi Việc + Lịch (M2)
 
-**Priority:** P2 · **Effort:** 6h · **Status:** Code done — chờ người dùng phát hành 1.3.0 (sau 1.2.0); thử 10 câu model thật hoãn (router LLM local không chạy)
+**Priority:** P2 · **Effort:** 6h · **Status:** Code done — đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11); thử 10 câu model thật hoãn (router LLM local không chạy)
 
 ## Context Links
 - Spec §6.2 (Việc, Lịch), §9
@@ -34,7 +34,7 @@ Thêm 6 tool đề xuất + bật 6 loại operation ở apply/preview. Hợp đ
 - [x] 6 tool đề xuất (`tools/tasks.py`, `tools/plans.py`, phần chung `tools/records.py`) + ví dụ giao việc/dời lịch trong instructions
 - [x] apply + preview 6 loại (mutator dùng chung trong `dataMutations.ts`; FamilyDB tạo/xoá việc, tạo/sửa/xoá lịch gọi lại cùng mutator)
 - [x] thử 10 câu Việc/Lịch với model thật — `kr/deepseek-3.2` qua router local: **7/10 và 8/10** (2 lượt), 0 request ghi → đạt ([báo cáo](./reports/phase-08-real-model.md), mục "Lần đo 2"). Lần đo trước qua OpenRouter không đo được (gemma 429, mistral-nemo không gọi tool) — giữ trong báo cáo
-- [ ] phát hành 1.3.0 — CHANGELOG đã nháp; **chờ người dùng phát hành** (sau 1.2.0)
+- [x] phát hành — đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11)
 
 ## Kết quả (2026-10-10)
 - Node: `npm run lint` + `npm test` (390 test) + `npm run build` xanh. Mới: `agentApply.tasks.test.ts` (32 ca: merge, guard 409, quyền 403, ngày/thứ lặp 422, trộn 3 module 1 lần ghi), ma trận quyền ở `permissions.test.ts`, tích hợp SQLite thật ở `db.batch.test.ts`.
