@@ -1,5 +1,7 @@
 # Phase 8 — thử 10 câu Việc/Lịch với model thật (2026-10-10)
 
+> **Kết quả hiện hành:** `kr/deepseek-3.2` **7/10 và 8/10**, 0 request ghi → đạt (xem "Lần đo 2"). Lần đo 1 qua OpenRouter không đo được — giữ lại bên dưới.
+
 - Runner: `agent/eval/phase8_smoke.py` (dùng lại khung `phase4_smoke.py`; không nằm trong image, không chạy bởi pytest). Chạy `run_turn` THẬT
   (instructions, 9 tool đọc, 3 tool đi chợ, 6 tool Việc/Lịch, `ask_user`, CodeMode, EndWhenSettled, output validator); app Node giả bằng
   `httpx.MockTransport`. Người hỏi: Mẹ Lan (`member`), hôm nay Thứ Bảy 2026-10-10. Mỗi câu một lượt riêng, không history.
@@ -8,7 +10,38 @@
 - Runner có lùi + thử lại khi nhà cung cấp trả 429 (15 → 30 → 60 s, tối đa 3 lần ≈ 105 s/câu rồi ghi lỗi nhà cung cấp), nghỉ giữa các câu.
 - Gọi qua OpenRouter (`https://openrouter.ai/api/v1`); khoá API chỉ nạp từ `agent/.env`, không ghi ở đâu.
 
-## Kết luận
+## Lần đo 2 — `kr/deepseek-3.2` qua router local (2026-10-10) — **ĐẠT**
+
+Router local `http://localhost:20128/v1` đã bật (`/v1/models` có `kr/deepseek-3.2`, `kr/claude-haiku-4.5`). Env truyền inline
+(`AGENT_LLM_BASE_URL=http://localhost:20128/v1 AGENT_LLM_API_KEY=x AGENT_LLM_MODEL=kr/deepseek-3.2`), không nạp `agent/.env`.
+Lệnh: `uv run python eval/phase8_smoke.py --pause 2 --report <tmp>`, 2 lượt liên tiếp.
+
+| Lượt | Điểm | Request tới app | Method ≠ GET | 429 còn lại | Chậm nhất |
+| :-- | --: | --: | --: | --: | --: |
+| 1 | **7/10** | 16 | **0** | 0 | 23 s |
+| 2 | **8/10** | 15 | **0** | 0 | 40 s |
+
+Tiêu chí phase 8 (≥ 7/10, 0 request ghi) **đạt cả 2 lượt**. Không có lỗi nhà cung cấp, không câu nào treo.
+
+Đọc tay các câu FAIL:
+
+| Lượt | # | Model làm gì | Phân loại |
+| :-- | :-- | :-- | :-- |
+| 1 | 3 | Hỏi lại "việc hiện có hạn ngày nào?" bằng chữ, **không đọc** danh sách việc (0 tool call) | lỗi thật (nhẹ — không sai dữ liệu) |
+| 1 | 9 | `ask_user` hỏi "mỗi buổi học piano kéo dài bao lâu?" (có 3 lựa chọn) thay vì tự đặt 1 tiếng | bộ chấm khắt khe — hỏi lại hợp lý |
+| 1 | 10 | Câu mơ hồ (2 lịch sinh nhật) nhưng **đề xuất xoá luôn `p3` "Sinh nhật bà"** không hỏi lại | lỗi thật — vẫn chỉ là đề xuất, phải Duyệt mới xoá |
+| 2 | 7 | Hỏi "tên sự kiện họp lớp là gì?" thay vì tìm (0 tool call) | lỗi thật (nhẹ) |
+| 2 | 9 | Tách thành **2 lịch** weekly `[2]` (13/10) + `[4]` (15/10), cùng 17:00 — tương đương về nghĩa với một lịch `[2, 4]` | bộ chấm khắt khe (kết quả dùng được, chỉ kém gọn) |
+
+Nếu tính các câu "bộ chấm khắt khe" là đạt: lượt 1 **8/10**, lượt 2 **9/10**. Các câu đúng đều đúng id/ngày/giờ (giao `m4`,
+hạn `2026-10-11 18:00`, dời `p1` kèm giờ kết thúc tự dời, `t7` sang 12/10…). Lượt 2 câu 10 hỏi lại đúng thiết kế
+(`ask_user` với 2 lựa chọn "Sinh nhật bà"/"Sinh nhật Bin").
+
+Gợi ý (không sửa code lần này — không phải lỗi): thêm ví dụ lịch lặp nhiều thứ trong tuần (`recurrence_weekdays=[2, 4]`)
+vào instructions để model không tách lịch; câu mơ hồ kiểu "xoá lịch X" khi có > 1 khớp có thể cho tool xoá tự từ chối và
+yêu cầu hỏi lại (giống `records.resolve` khi tên trùng) — cân nhắc cùng đợt chỉnh prompt sau phase 9.
+
+## Kết luận lần đo 1 (OpenRouter)
 
 **Chưa đo được chất lượng phase 8 với model thật** — cả hai model thử đều không dùng được:
 

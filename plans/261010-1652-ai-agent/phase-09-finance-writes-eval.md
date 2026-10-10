@@ -40,7 +40,8 @@ Bật 3 operation thu chi (rủi ro cao nhất — sai số tiền) và dựng b
 - [x] 3 tool thu chi — `tools/finance.py` (+ `records.resolve` thêm `name_key`), ví dụ trong instructions
 - [x] apply + preview thu chi — `canWriteFinance`, mutator dùng chung `dataMutations.ts`, merge khi sửa, guard fingerprint, xoá file hoá đơn sau khi ghi; nhãn hạng mục trên thẻ Duyệt
 - [x] khung eval 57 câu + báo cáo — `agent/eval/{run_eval.py, cases.json, fixtures/app.json}`; [báo cáo](./reports/phase-09-eval.md)
-- [ ] chạy eval với ≥ 2 model × ≥ 2 lần — **hoãn**: router LLM local tắt; lệnh ở báo cáo, chạy khi router bật
+- [x] chạy eval với ≥ 2 model × ≥ 2 lần — 2026-10-10 qua router local ([báo cáo](./reports/phase-09-eval.md)): `kr/deepseek-3.2` 77% / 84%, `kr/claude-haiku-4.5` 75% / 74% (strict); 0 sai số tiền, 0 request ghi, vượt quyền 5/5 ở cả 4 lần
+- [ ] đạt ≥ 85% strict — **chưa**: trừ lỗi bộ chấm (S01 kỳ vọng sai vì tool bỏ món đã có; mơ hồ hỏi bằng chữ; tách lịch 2 thứ) thì 86–91%. Cần sửa kỳ vọng S01 + chỉnh prompt (số tiền không đơn vị → hỏi lại, hạng mục tự thêm, Ví dụ 5 "hôm qua") rồi chạy lại
 - [ ] phát hành 1.4.0 — CHANGELOG đã nháp; **chờ người dùng phát hành** (sau 1.2.0, 1.3.0)
 
 ## Kết quả (2026-10-10)

@@ -35,11 +35,12 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | 5 | [Node: proxy, lưu trữ, Duyệt/apply](./phase-05-node-integration.md) | Done — E2E thật: đề xuất → Duyệt → món ở Đi chợ + SSE |
 | 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
 | 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Code done — updater 6 ca E2E local; chờ người dùng phát hành 1.2.0; thử + đo RAM trên Pi hoãn tới lần triển khai đầu |
-| 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; chờ người dùng phát hành 1.3.0 (sau 1.2.0); thử 10 câu model thật hoãn |
-| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 513 pytest; khung eval 57 câu xong, chạy model thật hoãn (router tắt); chờ người dùng phát hành 1.4.0 (sau 1.3.0); assistant cũ giữ lại |
+| 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; chờ người dùng phát hành 1.3.0 (sau 1.2.0); model thật `kr/deepseek-3.2` 7/10 & 8/10, 0 ghi — đạt |
+| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 513 pytest; eval 57 câu model thật: deepseek-3.2 77%/84%, haiku-4.5 75%/74% strict (86–91% sau khi trừ lỗi bộ chấm) — 0 sai số tiền, 0 ghi; ≥ 85% strict chưa đạt; chờ người dùng phát hành 1.4.0 (sau 1.3.0); assistant cũ giữ lại |
 
 **Trạng thái (2026-10-10):** mọi phase đã code xong. Còn lại (người dùng làm): phát hành 1.2.0 → 1.3.0 → 1.4.0
-(`npm run release`, chờ người dùng phát hành); chạy eval model thật (`agent/eval/run_eval.py`) + thử tay phase 8; đo RAM trên Pi.
+(`npm run release`, chờ người dùng phát hành); đo RAM trên Pi. Eval model thật đã chạy (2026-10-10): phase 8 đạt; phase 9 an toàn
+đạt (0 sai số tiền, 0 ghi) nhưng điểm strict 74–84% < 85% — cần sửa kỳ vọng câu S01 + chỉnh prompt rồi chạy lại trước khi tính tới gỡ assistant cũ.
 
 Thứ tự: 1 → 2 → (3 → 4) ‖ 5 → 6 → 7 → phát hành M1 → 8 → M2 → 9 → M3.
 Phase 3–4 (Python) và 5 (Node) chạy song song được sau khi 2 xong — ranh giới là hợp đồng ở phase 2.
