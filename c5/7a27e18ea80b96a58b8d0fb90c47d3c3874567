@@ -1,0 +1,56 @@
+.env.example
+  s_409924ee63d935::t_32ffb68c5e1031 26-39
+README.md
+  s_409924ee63d935::t_1c84999aee528b 159-160,320-330,332-333,335-337,343-353,355-384,390-391,516-519
+  s_409924ee63d935::t_0918fdb63c269c 331,354
+  s_409924ee63d935::t_408e9776ea6044 334,392-393
+  s_409924ee63d935::t_23f0d7ce4ecce4 338-342,385-389
+  s_409924ee63d935::t_60a36917c12989 394
+docker-compose.yml
+  s_409924ee63d935::t_32ffb68c5e1031 7-8,53-59,66-103,106,139-143
+CLAUDE.md
+  s_409924ee63d935::t_5edfe93aeb9135 19,27-31
+  s_409924ee63d935::t_23f0d7ce4ecce4 20-22
+server/updater.test.ts
+  s_409924ee63d935::t_d76bdc31df112a 70-83
+docs/ai-agent-spec.md
+  s_409924ee63d935::t_bd003f9fdc53bd 77,85
+.github/workflows/release.yml
+  s_409924ee63d935::t_4eafc87078a757 62-82,90-92,103-113
+  s_409924ee63d935::t_a7eb5bd6003ae9 3,38-41,114
+server/updater.ts
+  s_409924ee63d935::t_e245a5574113aa 184-189,192-194,217-218
+agent/README.md
+  s_409924ee63d935::t_5df8c3f14ae25c 7
+CHANGELOG.md
+  s_409924ee63d935::t_5edfe93aeb9135 6-19,22-23
+  s_409924ee63d935::t_23f0d7ce4ecce4 20-21
+deploy/updater.sh
+  s_409924ee63d935::t_23f0d7ce4ecce4 431
+  s_409924ee63d935::t_4eafc87078a757 250-306,453-455,481-482,491-492
+  s_409924ee63d935::t_d5fa0c464d973e 18-22,33-35,39,59-64,83,117,174,176-179,226-249,307-310,428-430,432-434,437-438
+src/components/UpdatePanel.tsx
+  s_409924ee63d935::t_41a7148de98ac1 60-61,105,114,752-754
+  s_409924ee63d935::t_23f0d7ce4ecce4 755
+  s_409924ee63d935::t_7c0b43f45ee436 756-757
+.github/workflows/ci.yml
+  s_409924ee63d935::t_86ab6720f7e765 32-52
+agent/Dockerfile
+  s_409924ee63d935::t_8e1106b726d2d9 27-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c57a27e18ea80b96a58b8d0fb90c47d3c3874567",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
