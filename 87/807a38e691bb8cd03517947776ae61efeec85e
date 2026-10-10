@@ -1,0 +1,49 @@
+docs/ai-agent-spec.md
+  s_409924ee63d935::t_694a9bfdc0251f 161,174
+agent/contracts/vectors.json
+  s_409924ee63d935::t_71c58b3366f3a1 1-32,52-855,858-880,927-931
+  s_409924ee63d935::t_9c0cd3bad09ea7 33-51,881-926
+  s_409924ee63d935::t_56adb0358ec61a 856-857
+plans/261010-1652-ai-agent/phase-02-contracts.md
+  s_409924ee63d935::t_b1b9f9bc8c26ea 3,47-59
+  s_409924ee63d935::t_28227b3a94531c 60-61
+.github/workflows/ci.yml
+  s_409924ee63d935::t_175565fa08c221 28-29
+server/agentContract.test.ts
+  s_409924ee63d935::t_a151fdb055b9ea 137-185
+  s_409924ee63d935::t_0a888805787fae 15-18
+  s_409924ee63d935::t_56adb0358ec61a 1-14,19-136,186
+Dockerfile
+  s_409924ee63d935::t_175565fa08c221 22-23
+agent/contracts/gen_vectors.py
+  s_409924ee63d935::t_db02a585cf9286 1-47,49-94
+  s_409924ee63d935::t_9c0cd3bad09ea7 48
+agent/contracts/README.md
+  s_409924ee63d935::t_cc2931f07f4b4c 1-74,90-105
+  s_409924ee63d935::t_6289eb3cb462f2 75-89
+agent/contracts/operations.schema.json
+  s_409924ee63d935::t_f03f896558d202 1-251
+server/agentContract.ts
+  s_409924ee63d935::t_8abc2bec6c9a6a 289
+  s_409924ee63d935::t_0fe5786703ddff 1-164,167-214,216,218-233,236,238-247,249-257,259-263,267-288,290-295,306,308-313,316
+  s_409924ee63d935::t_4550af0261e8bd 165-166,215,217,234-235,237,248,258,264-266,296-305,307,314
+  s_409924ee63d935::t_1723c064809f09 315
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_b1b9f9bc8c26ea 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "87807a38e691bb8cd03517947776ae61efeec85e",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
