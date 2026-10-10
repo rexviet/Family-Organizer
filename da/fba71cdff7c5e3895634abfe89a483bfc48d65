@@ -1,0 +1,27 @@
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_2d83f6374fc86a 38
+plans/261010-1652-ai-agent/phase-08-task-plan-writes.md
+  s_409924ee63d935::t_2d83f6374fc86a 40-41,52-59
+  s_409924ee63d935::t_dc14e8229e947a 3,33-39,42-51
+docs/ai-agent-spec.md
+  s_409924ee63d935::t_f35ffcf75c7e84 164-169
+CHANGELOG.md
+  s_409924ee63d935::t_eeba558d3ce2ab 19
+  s_409924ee63d935::t_854b45b89a2f5c 6-18,20-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dafba71cdff7c5e3895634abfe89a483bfc48d65",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
