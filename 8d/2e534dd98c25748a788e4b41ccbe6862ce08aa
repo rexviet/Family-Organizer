@@ -1,0 +1,55 @@
+plans/261010-1652-ai-agent/phase-04-agent-harness.md
+  s_a61be62a9154b3::t_f9d0d165bb2b2f 1-20,23-28,30-59,61-66
+  s_a61be62a9154b3::t_49374412352626 21-22,29,60
+plans/261010-1652-ai-agent/phase-05-node-integration.md
+  s_a61be62a9154b3::t_49374412352626 30,32,44,53,80-84,86-93
+  s_a61be62a9154b3::t_57893dc0041ff1 1-2,4-29,31,33-41,43,45-52,54-55,57-79
+  s_a61be62a9154b3::t_7ebf14003708e3 3,42,56,85
+plans/261010-1652-ai-agent/phase-03-agent-service.md
+  s_a61be62a9154b3::t_2c2cf1e4c8363d 1-18,21-65
+  s_a61be62a9154b3::t_49374412352626 19-20
+plans/261010-1652-ai-agent/phase-06-ui.md
+  s_a61be62a9154b3::t_0f4ab889703f16 1-12,14-16,18-48
+  s_a61be62a9154b3::t_49374412352626 13,17
+plans/261010-1652-ai-agent/phase-08-task-plan-writes.md
+  s_a61be62a9154b3::t_7ebf14003708e3 15
+  s_a61be62a9154b3::t_5ce866d9bf194a 1-7,9-14,16-17,19-45
+  s_a61be62a9154b3::t_49374412352626 8,18
+plans/261010-1652-ai-agent/plan.md
+  s_a61be62a9154b3::t_642b8c6f1efa76 1-5,7-56
+  s_a61be62a9154b3::t_7ebf14003708e3 6
+  s_a61be62a9154b3::t_49374412352626 57-70
+plans/261010-1652-ai-agent/phase-07-deploy.md
+  s_a61be62a9154b3::t_c31db80f65bf6d 1-12,14,16-18,22-31,33-59
+  s_a61be62a9154b3::t_49374412352626 13,15,19-21,32,60-62
+plans/261010-1652-ai-agent/phase-02-contracts.md
+  s_a61be62a9154b3::t_49374412352626 19-20,22,25,29-31
+  s_a61be62a9154b3::t_3b97d4b38454bd 1-18,21,23-24,26-28,32-58
+plans/261010-1652-ai-agent/phase-01-spike.md
+  s_a61be62a9154b3::t_7ebf14003708e3 10
+  s_a61be62a9154b3::t_49374412352626 15-16
+  s_a61be62a9154b3::t_b25daf5c97a053 1-9,11-14,17-38
+plans/261010-1652-ai-agent/phase-09-finance-writes-eval.md
+  s_a61be62a9154b3::t_a5ab5d328be03e 1-18,20-55
+  s_a61be62a9154b3::t_49374412352626 19
+docs/ai-agent-spec.md
+  s_a61be62a9154b3::t_fc3f5b314efd03 3,35,61,100
+  s_a61be62a9154b3::t_e5e8777bab7253 217,256-257
+  s_a61be62a9154b3::t_7ebf14003708e3 224,236,269
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8d2e534dd98c25748a788e4b41ccbe6862ce08aa",
+  "prompts": {},
+  "sessions": {
+    "s_a61be62a9154b3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd31c43f-8126-4ba5-b344-0d652abf5e2e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
