@@ -1,0 +1,160 @@
+agent/tests/unit/test_outcome_clarify.py
+  s_409924ee63d935::t_996ab90726b16d 1-115
+agent/src/family_agent/harness/outcome.py
+  s_409924ee63d935::t_3e193c461decca 30
+  s_409924ee63d935::t_2dc36072d923ac 1-29,31-45
+agent/src/family_agent/harness/vocab.py
+  s_409924ee63d935::t_95c335f54e9786 1-26
+agent/src/family_agent/harness/end_when_settled.py
+  s_409924ee63d935::t_1a675decb9184f 1-35
+agent/tests/unit/test_prompts.py
+  s_409924ee63d935::t_d54c3034f392c1 1-66
+agent/src/family_agent/harness/prompts.py
+  s_409924ee63d935::t_da5414ec15402f 85-86
+  s_409924ee63d935::t_bdc03764bff4f2 1-67,69-70,72-84,88-91,94-96
+  s_409924ee63d935::t_3e193c461decca 68,71,87,92-93
+src/utils/recurrence.test.ts
+  s_409924ee63d935::t_35afa5cf19c3b7 8-10,21-26,29-45
+agent/src/family_agent/harness/deps.py
+  s_409924ee63d935::t_cccb8835a47d2c 39-43,54-57
+  s_409924ee63d935::t_bf0a8bfd3d2278 36,117-120,130,133-141,145-157,163
+  s_409924ee63d935::t_f46b32adf3ccd2 11-12,44-53
+  s_409924ee63d935::t_1d711edf3a4156 121
+  s_409924ee63d935::t_d5c98b495ef732 1-10,13-35,37-38,58-116,122-129,131-132,142-144,158-162,164-165
+agent/src/family_agent/harness/tools/ask.py
+  s_409924ee63d935::t_e74927f6c748d0 1-8,10-22,28-31
+  s_409924ee63d935::t_f46b32adf3ccd2 9,23-27
+agent/.dockerignore
+  s_409924ee63d935::t_8eff2c5e1d4507 12
+agent/tests/unit/test_read_tools.py
+  s_409924ee63d935::t_cccb8835a47d2c 1-49,53-137,140-177,179-334,338-345
+  s_409924ee63d935::t_3e193c461decca 50-52,138-139,335-337
+  s_409924ee63d935::t_95c335f54e9786 178
+  s_409924ee63d935::t_2f8ee95f774cda 346-381
+agent/eval/phase4_smoke.py
+  s_409924ee63d935::t_55703e9536e863 36,73-74,186
+  s_409924ee63d935::t_8eff2c5e1d4507 1-35,37-72,75-185,187-201
+agent/tests/unit/test_recurrence.py
+  s_409924ee63d935::t_85356bf246e54f 41
+  s_409924ee63d935::t_2f8ee95f774cda 36-40
+  s_409924ee63d935::t_e6ad495723f9a1 1-35
+agent/tests/unit/test_deps.py
+  s_409924ee63d935::t_076fdb7ee3741a 1-140
+  s_409924ee63d935::t_2f8ee95f774cda 141-193
+agent/src/family_agent/harness/tools/read.py
+  s_409924ee63d935::t_c192a5870e7f49 11
+  s_409924ee63d935::t_bf0a8bfd3d2278 9,149-150,155-160,348-354
+  s_409924ee63d935::t_d40a7cd521c453 169,188,248,301,358,408,422,440
+  s_409924ee63d935::t_2f6470e9318814 1-8,10,12-148,151-154,161-168,170-187,189-247,249-300,302-326,328-345,355-357,359-387,392-407,409-421,423-439,441-474
+  s_409924ee63d935::t_3e193c461decca 327,388-391
+  s_409924ee63d935::t_dcd5929b726e69 346-347
+agent/README.md
+  s_409924ee63d935::t_abf7e140a06067 6,30-40,54,116-132,139
+  s_409924ee63d935::t_64a988c36475b6 57,135-136
+  s_409924ee63d935::t_5de088f9483bfe 133-134,137-138
+agent/src/family_agent/harness/clarify.py
+  s_409924ee63d935::t_2dc36072d923ac 1-50
+agent/tests/unit/test_run_flow.py
+  s_409924ee63d935::t_72c85aef526a8f 508-578
+  s_409924ee63d935::t_33b6147e609365 422-423
+  s_409924ee63d935::t_2f8ee95f774cda 3,5,324-377,381-420,425-476,479-507
+  s_409924ee63d935::t_1ecb2eb899d30d 110,114,152,178,183
+  s_409924ee63d935::t_85356bf246e54f 378-380,421,424,477-478
+  s_409924ee63d935::t_64a988c36475b6 11
+  s_409924ee63d935::t_3e193c461decca 57-59,170-173,200-203,237-238
+  s_409924ee63d935::t_d9f2b23ec50631 1-2,4,6-10,12-56,60-109,111-113,115-151,153-169,174-177,179-182,184-199,204-236,239-323
+agent/src/family_agent/harness/recurrence.py
+  s_409924ee63d935::t_bf0a8bfd3d2278 73
+  s_409924ee63d935::t_e6ad495723f9a1 1-72,76-95
+  s_409924ee63d935::t_2be1cff4812267 74-75
+plans/261010-1652-ai-agent/reports/phase-04-real-model.md
+  s_409924ee63d935::t_5de088f9483bfe 36
+  s_409924ee63d935::t_477cb51cb3e37f 37,40
+  s_409924ee63d935::t_fcee17673d5a01 1-35,38-39,41-45
+docs/ai-agent-spec.md
+  s_409924ee63d935::t_35a11d4c7b16ce 199
+agent/src/family_agent/app.py
+  s_409924ee63d935::t_576b55eb1e9609 1,26-27,94,98,100-106,109-114,119,170-178,190
+  s_409924ee63d935::t_5e582c95cb3f27 17
+  s_409924ee63d935::t_5d3cd4e1cf83d8 99
+agent/src/family_agent/harness/__init__.py
+  s_409924ee63d935::t_2dc36072d923ac 1
+agent/src/family_agent/settings.py
+  s_409924ee63d935::t_baa669543fd8cb 8,36,38,58-60,64
+  s_409924ee63d935::t_bf0a8bfd3d2278 6,51-56
+  s_409924ee63d935::t_1d711edf3a4156 37,61-63
+  s_409924ee63d935::t_ce81d51af3d2f7 57,65
+agent/src/family_agent/harness/tools/__init__.py
+  s_409924ee63d935::t_2f6470e9318814 1
+plans/261010-1652-ai-agent/phase-04-agent-harness.md
+  s_409924ee63d935::t_6b5301a60a926f 75-83,85-104
+  s_409924ee63d935::t_477cb51cb3e37f 3,48-54
+  s_409924ee63d935::t_64a988c36475b6 114-119
+  s_409924ee63d935::t_5de088f9483bfe 84,105-113
+agent/src/family_agent/harness/tools/shopping.py
+  s_409924ee63d935::t_e74927f6c748d0 1-15,17-18,20-63,80-93,95-105,130-162,168-176,196-203,215-219
+  s_409924ee63d935::t_deb07624a79522 65-70
+  s_409924ee63d935::t_f46b32adf3ccd2 16,106-129,177-195,204-214
+  s_409924ee63d935::t_82ba6654de711f 64,71-79,163-167
+  s_409924ee63d935::t_d40a7cd521c453 19,94
+agent/tests/unit/test_end_when_settled.py
+  s_409924ee63d935::t_70981f69ceb1f1 57
+  s_409924ee63d935::t_d40a7cd521c453 1-56,58-110,113-126
+  s_409924ee63d935::t_3e193c461decca 111-112
+agent/tests/unit/test_shopping_tools.py
+  s_409924ee63d935::t_98bccfc9d04308 2-242
+  s_409924ee63d935::t_2f8ee95f774cda 243-273
+  s_409924ee63d935::t_3e193c461decca 1
+agent/tests/unit/test_settings.py
+  s_409924ee63d935::t_baa669543fd8cb 89-102
+  s_409924ee63d935::t_2f8ee95f774cda 106-116
+  s_409924ee63d935::t_72c85aef526a8f 103-105
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_477cb51cb3e37f 34
+agent/src/family_agent/harness/code_guard.py
+  s_409924ee63d935::t_1d711edf3a4156 37,65,67-69,72-78,82-87
+  s_409924ee63d935::t_30340e854df58d 1-11,14-36,38-64,66,70-71,79-81
+  s_409924ee63d935::t_85356bf246e54f 12-13
+agent/tests/unit/test_app.py
+  s_409924ee63d935::t_1d711edf3a4156 38,407
+  s_409924ee63d935::t_1cfeb3eb6dcb4f 6,12,342-385,388-406,408-437
+  s_409924ee63d935::t_5b7e816d13bf76 61-65
+  s_409924ee63d935::t_08d8a4b2df5c1a 438-439,442-444,446
+  s_409924ee63d935::t_3e193c461decca 386-387
+  s_409924ee63d935::t_2f8ee95f774cda 440-441,445
+src/utils/recurrence.cases.json
+  s_409924ee63d935::t_fe3f9345eca81f 284,289,452
+  s_409924ee63d935::t_f06e963e1bd33c 1-283,285-288,290-451
+agent/src/family_agent/harness/agent.py
+  s_409924ee63d935::t_8ee7be4d8483a7 237-239
+  s_409924ee63d935::t_3e193c461decca 47-49
+  s_409924ee63d935::t_f46b32adf3ccd2 119
+  s_409924ee63d935::t_30340e854df58d 13,25,34,50,54,57,59-63,78,109-110,133,152,156-165,184-190,257,260-264,276
+  s_409924ee63d935::t_1d711edf3a4156 12,19,58,111-112,117-118,120-121,258
+  s_409924ee63d935::t_64a988c36475b6 259
+  s_409924ee63d935::t_ade40e9c99dff0 86
+  s_409924ee63d935::t_85356bf246e54f 55-56
+  s_409924ee63d935::t_46254a45e1c7b5 136
+  s_409924ee63d935::t_257a226399519e 1-11,14-18,20-24,26-33,35-46,51-53,64-77,79-85,87-108,113-116,122-132,134-135,137-151,153-155,166-183,191-236,240-256,265-275
+agent/pyproject.toml
+  s_409924ee63d935::t_9ad67baf264c5f 24
+  s_409924ee63d935::t_f4fdf13b4f57c3 41
+agent/uv.lock
+  s_409924ee63d935::t_78de7e565502e2 180,199,781-792
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5d70934dd7f47f502a4a46622f201d607f297076",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "unknown"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
