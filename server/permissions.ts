@@ -4,7 +4,40 @@
  */
 
 import { UserRole, isLimitedViewer } from "../src/types.js";
-import type { Task } from "../src/types.js";
+import type { FamilyPlan, Task } from "../src/types.js";
+
+type Actor = { role: UserRole; userId: string };
+
+const isAdult = (role: UserRole) => role === UserRole.ADMIN || role === UserRole.MEMBER;
+
+/** Tạo việc (POST /api/tasks không kèm id): mọi vai trò đã đăng nhập. */
+export function canCreateTask(_session: Actor): boolean {
+  return true;
+}
+
+/** Xoá việc (DELETE /api/tasks/:id): chỉ Admin/Thành viên. */
+export function canDeleteTask(session: Actor): boolean {
+  return isAdult(session.role);
+}
+
+/** Tạo lịch (POST /api/plans không kèm id): Admin/Thành viên/Trẻ — Khách không. */
+export function canCreatePlan(session: Actor): boolean {
+  return isAdult(session.role) || session.role === UserRole.CHILD;
+}
+
+/**
+ * Sửa lịch có sẵn (POST /api/plans kèm id): vai trò được tạo lịch VÀ (người tạo hoặc Admin).
+ * Lịch không còn tồn tại thì chỉ xét vai trò (endpoint gốc không chặn).
+ */
+export function canEditPlan(plan: Pick<FamilyPlan, "creatorId"> | undefined | null, session: Actor): boolean {
+  if (!canCreatePlan(session)) return false;
+  return !plan || plan.creatorId === session.userId || session.role === UserRole.ADMIN;
+}
+
+/** Xoá lịch (DELETE /api/plans/:id): cùng luật với sửa. */
+export function canDeletePlan(plan: Pick<FamilyPlan, "creatorId"> | undefined | null, session: Actor): boolean {
+  return canEditPlan(plan, session);
+}
 
 /**
  * Quyền sửa công việc đã có qua POST /api/tasks.

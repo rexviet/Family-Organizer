@@ -45,7 +45,10 @@ import { SEED_DISHES } from "../src/utils/mealPlan.js";
 import { isDebtFullyPaid } from "../src/utils/debt.js";
 import { sqliteIsEmpty, sqliteLoad, sqliteSave, sqliteCheckpoint } from "./sqlite.js";
 import { deleteMediaByUrl } from "./media.js";
-import { newId, mutateAddShopping, mutateDeleteShopping } from "./dataMutations.js";
+import {
+  newId, mutateAddShopping, mutateDeleteShopping,
+  mutateCreateTask, mutateDeleteTask, mutateCreatePlan, mutateUpdatePlan, mutateDeletePlan,
+} from "./dataMutations.js";
 // Hàm sửa dữ liệu thuần dùng chung với apply của trợ lý — re-export cho tiện import.
 export { newId, mutateAddShopping, mutateSetShoppingPurchased, mutateDeleteShopping } from "./dataMutations.js";
 import { dispatchPush } from "./push.js";
@@ -322,12 +325,15 @@ export class FamilyDB {
     return normalizeDB(sqliteLoad());
   }
 
-  private static writeRaw(db: FamilyOrganizerDB): void {
+  // Trả false khi ghi lỗi (lỗi vẫn bị nuốt như trước — chỉ để người gọi bỏ bước sau ghi, vd. gửi push).
+  private static writeRaw(db: FamilyOrganizerDB): boolean {
     // better-sqlite3 is synchronous; the save runs in a single atomic WAL transaction.
     try {
       sqliteSave(db);
+      return true;
     } catch (e) {
       console.error("Lỗi ghi dữ liệu vào SQLite:", e);
+      return false;
     }
   }
 
@@ -971,50 +977,10 @@ export class FamilyDB {
       this.logActivity(userId, username, "Cập nhật Task", `Đã sửa đổi công việc "${updatedTask.title}".`);
       return updatedTask;
     } else {
-      // CREATE Task
-      const newTask: Task = {
-        id: newId("task"),
-        title: taskData.title || "Công việc mới",
-        description: taskData.description || "",
-        status: taskData.status || ("todo" as any),
-        priority: taskData.priority || ("medium" as any),
-        dueDate: taskData.dueDate || new Date(Date.now() + 86400000).toISOString().slice(0, 10) + " 12:00",
-        creatorId: userId,
-        assigneeId: taskData.assigneeId || null,
-        isShared: taskData.isShared !== undefined ? taskData.isShared : true,
-        tags: taskData.tags || [],
-        rewardPoints: Math.max(0, Number((taskData as any).rewardPoints || 0)),
-        completedById: null,
-        completedAt: null,
-        recurrenceType: (taskData as any).recurrenceType || "none",
-        recurrenceInterval: Math.max(1, Number((taskData as any).recurrenceInterval || 1)),
-        recurrenceEndDate: (taskData as any).recurrenceEndDate || undefined,
-        rotationMemberIds: (taskData as any).rotationMemberIds || undefined,
-        sourceRecurringTaskId: null,
-        comments: [],
-        history: [{
-          id: `h_${Date.now()}`,
-          userId,
-          username,
-          action: "Đã khởi tạo công việc này",
-          createdAt: nowStr
-        }],
-        createdAt: nowStr,
-        updatedAt: nowStr
-      };
-
-      db.tasks.push(newTask);
-      this.logActivity(userId, username, "Tạo Task", `Đã lập công việc mới "${newTask.title}".`);
-
-      // Push notification to assignee
-      if (newTask.assigneeId && newTask.assigneeId !== userId) {
-        this.addNotificationInternal(db, newTask.assigneeId, "Công việc mới được giao", `Bạn vừa được giao nhiệm vụ: "${newTask.title}"`);
-      } else if (newTask.isShared) {
-        this.addNotificationInternal(db, "all", "Công việc gia đình mới", `Cả nhà ơi có nhiệm vụ: "${newTask.title}"`);
-      }
-
-      this.writeRaw(db);
-      this.logActivity(userId, username, "Tạo Task", `Đã lập công việc mới "${newTask.title}".`);
+      // CREATE Task — dùng chung với trợ lý (dataMutations); push gửi sau khi ghi.
+      const notices: Notification[] = [];
+      const newTask = mutateCreateTask(db, taskData, userId, username, notices);
+      if (this.writeRaw(db)) this.pushNotifications(notices);
       return newTask;
     }
   }
@@ -1107,80 +1073,32 @@ export class FamilyDB {
 
   public static deleteTask(taskId: string, userId: string, username: string): void {
     const db = this.readRaw();
-    const idx = db.tasks.findIndex(t => t.id === taskId);
-    if (idx === -1) return;
-
-    const taskTitle = db.tasks[idx].title;
-    db.tasks.splice(idx, 1);
-    this.writeRaw(db);
-    this.logActivity(userId, username, "Xóa Task", `Đã xóa công việc "${taskTitle}".`);
+    if (mutateDeleteTask(db, taskId, userId, username)) this.writeRaw(db);
   }
 
   // Plans Management
   public static savePlan(planData: Partial<FamilyPlan>, userId: string, username: string): FamilyPlan {
     const db = this.readRaw();
-    const nowStr = new Date().toISOString();
 
     if (planData.id) {
-      // UPDATE
-      const idx = db.plans.findIndex(p => p.id === planData.id);
-      if (idx === -1) throw new Error("Kế hoạch không tồn tại");
-
-      const updated = {
-        ...db.plans[idx],
-        ...planData
-      } as FamilyPlan;
-
-      db.plans[idx] = updated;
+      // UPDATE — merge {...cũ, ...mới}, dùng chung với trợ lý (dataMutations).
+      if (!db.plans.some(p => p.id === planData.id)) throw new Error("Kế hoạch không tồn tại");
+      // Người tạo/ngày tạo/id do server giữ — body không đổi được (không "chuyển" lịch riêng sang người khác).
+      const { id, creatorId: _c, createdAt: _t, ...changes } = planData;
+      const updated = mutateUpdatePlan(db, id, changes, userId, username);
       this.writeRaw(db);
-      this.logActivity(userId, username, "Cập nhật Lịch trình", `Đã cập nhật sự kiện "${updated.title}".`);
       return updated;
-    } else {
-      // CREATE
-      const newPlan: FamilyPlan = {
-        id: newId("plan"),
-        title: planData.title || "Kế hoạch mới",
-        description: planData.description || "",
-        startDate: planData.startDate || new Date().toISOString().slice(0, 16).replace("T", " "),
-        // Sự kiện lặp lại bỏ trống ngày kết thúc = lặp VÔ HẠN → giữ "" (KHÔNG ép về giờ hiện tại).
-        // Sự kiện 1 lần không có mốc kết thúc → mặc định +1 giờ để vẽ khoảng hợp lý.
-        endDate: (typeof planData.endDate === "string" && planData.endDate.trim())
-          ? planData.endDate.trim()
-          : (planData.isRecurring ? "" : new Date(Date.now() + 3600000).toISOString().slice(0, 16).replace("T", " ")),
-        isRecurring: planData.isRecurring || false,
-        recurrenceType: planData.recurrenceType || "none",
-        // Lưu các thứ trong tuần cho lịch lặp hằng tuần (vd chọn Thứ 4 dù bắt đầu Thứ 5).
-        // Thiếu dòng này thì CREATE bỏ mất → hệ thống lặp nhầm theo thứ của ngày bắt đầu.
-        recurrenceWeekdays: Array.isArray(planData.recurrenceWeekdays)
-          ? planData.recurrenceWeekdays.map((d: any) => Number(d)).filter((d: number) => Number.isInteger(d) && d >= 0 && d <= 6)
-          : undefined,
-        creatorId: userId,
-        isShared: planData.isShared !== undefined ? planData.isShared : true,
-        color: planData.color || "sky",
-        createdAt: nowStr
-      };
-
-      db.plans.push(newPlan);
-      this.writeRaw(db);
-      this.logActivity(userId, username, "Tạo Lịch trình", `Đã lập lịch trình mới: "${newPlan.title}".`);
-
-      if (newPlan.isShared) {
-        this.addNotificationInternal(db, "all", "Sự kiện gia đình mới", `Lịch gia đình có sự kiện mới: "${newPlan.title}" vào ngày ${newPlan.startDate.substring(0, 10)}`);
-      }
-
-      return newPlan;
     }
+    // CREATE — thông báo sự kiện chung được LƯU trong app (trước đây chỉ gửi push), push gửi sau khi ghi.
+    const notices: Notification[] = [];
+    const newPlan = mutateCreatePlan(db, planData, userId, username, notices);
+    if (this.writeRaw(db)) this.pushNotifications(notices);
+    return newPlan;
   }
 
   public static deletePlan(planId: string, userId: string, username: string): void {
     const db = this.readRaw();
-    const idx = db.plans.findIndex(p => p.id === planId);
-    if (idx === -1) return;
-
-    const title = db.plans[idx].title;
-    db.plans.splice(idx, 1);
-    this.writeRaw(db);
-    this.logActivity(userId, username, "Xóa Lịch trình", `Đã xóa sự kiện "${title}".`);
+    if (mutateDeletePlan(db, planId, userId, username)) this.writeRaw(db);
   }
 
   // Notes Management
@@ -2773,6 +2691,15 @@ export class FamilyDB {
   }
 
   // Internal notification builder
+  /** Gửi push hệ thống cho các thông báo ĐÃ lưu (gọi sau khi ghi xong). Push chưa cấu hình → không làm gì. */
+  public static pushNotifications(notifications: Notification[]): void {
+    if (notifications.length === 0) return;
+    const db = this.readRaw();
+    for (const n of notifications) {
+      void dispatchPush(db, n, (dead) => this.removePushSubscriptionsByEndpoints(dead));
+    }
+  }
+
   private static addNotificationInternal(db: FamilyOrganizerDB, userId: string, title: string, content: string, type: Notification["type"] = "system") {
     const newNotif: Notification = {
       id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,

@@ -112,8 +112,20 @@ function describeFor(ctx: PreviewContext) {
       case "task.delete":
         return { icon: "🗑️", text: `Xoá việc ${quoted(ctx.tasks.find((x) => x.id === op.taskId), "title")}`, tone: "delete" };
 
-      case "plan.create":
-        return { icon: "📅", text: `Tạo sự kiện "${op.title}" — ${shortDate(op.startDate)} → ${shortDate(op.endDate)}`, tone: "add" };
+      case "plan.create": {
+        if (!op.recurrenceType || op.recurrenceType === "none") {
+          return { icon: "📅", text: `Tạo sự kiện "${op.title}" — ${shortDate(op.startDate)} → ${shortDate(op.endDate)}`, tone: "add" };
+        }
+        // Lịch lặp: endDate là "lặp tới" — ghi cả năm để không nhầm với giờ kết thúc trong ngày.
+        const days = op.recurrenceWeekdays?.length ? ` (${show("recurrenceWeekdays", op.recurrenceWeekdays)})` : "";
+        const until = /^(\d{4})-(\d{2})-(\d{2})/.exec(op.endDate);
+        const untilText = until ? ` tới ${until[3]}/${until[2]}/${until[1]}` : "";
+        return {
+          icon: "📅",
+          text: `Tạo sự kiện "${op.title}" — ${shortDate(op.startDate)} · lặp ${show("recurrenceType", op.recurrenceType)}${days}${untilText}`,
+          tone: "add",
+        };
+      }
       case "plan.update": {
         const p = ctx.plans.find((x) => x.id === op.planId);
         return { icon: "✏️", text: `Sự kiện ${quoted(p, "title")}: ${diff(p, op.changes)}`, tone: "edit" };

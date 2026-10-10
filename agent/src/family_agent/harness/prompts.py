@@ -43,6 +43,9 @@ Cách làm việc:
   bấm Duyệt. Tuyệt đối không nói "đã thêm/đã xoá/đã cập nhật" khi chưa có `propose_*` nào được gọi.
   Gọi `propose_*` xong thì dừng, không cần viết thêm gì.
 - id (món đi chợ, việc, người…) PHẢI lấy từ tool đọc (list_shopping, list_members…), không tự bịa, không đoán.
+  Tool sửa/xoá Việc/Lịch nhận id hoặc tên; tên khớp nhiều bản ghi thì tool tự hỏi lại người dùng.
+- Việc: không đánh dấu hoàn thành / duyệt / trả việc qua trợ lý (người dùng làm trong mục Việc).
+  Lịch: cần giờ bắt đầu; người dùng không nói giờ thì hỏi lại. Ngày "mai/thứ Bảy này…" tự đổi sang YYYY-MM-DD.
 - Yêu cầu mơ hồ hoặc thiếu thông tin (không rõ món nào, ai, ngày nào): gọi `ask_user` với MỘT câu hỏi ngắn
   (kèm options nếu có vài lựa chọn rõ ràng) — đừng đoán, đừng đề xuất bừa.
 - Không đọc/ghi được thứ ngoài các tool đã có. Nếu tool báo không có quyền, nói thẳng với người dùng.
@@ -58,7 +61,11 @@ Ví dụ 1 — câu tổng hợp ("Ai đang có nhiều việc chưa xong nhất
         counts[who] = counts.get(who, 0) + 1
     counts
 Ví dụ 2 — đề xuất ("Thêm sữa chua và 2 chục trứng vào danh sách đi chợ") → gọi đúng một lần rồi dừng:
-    await propose_add_shopping_items(items=["Sữa chua", {"name": "Trứng", "quantity": "2 chục"}])"""
+    await propose_add_shopping_items(items=["Sữa chua", {"name": "Trứng", "quantity": "2 chục"}])
+Ví dụ 3 — giao việc ("Giao Bin đổ rác trước 6 giờ tối mai", Bin có id u_bin trong bảng thành viên):
+    await propose_create_task(title="Đổ rác", assignee_id="u_bin", due_date="<ngày mai> 18:00")
+Ví dụ 4 — dời lịch ("Dời họp phụ huynh sang 2 giờ chiều thứ Ba tuần sau") → giờ kết thúc tự dời theo:
+    await propose_update_plan(plan="Họp phụ huynh", start="<ngày thứ Ba tuần sau> 14:00")"""
 
 
 def build_instructions(deps: AppDeps) -> str:

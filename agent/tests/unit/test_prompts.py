@@ -64,3 +64,31 @@ def test_tre_em_khong_xem_thu_chi() -> None:
     assert "không xem được thu chi" in build_instructions(make(role="child"))
     assert "không xem được thu chi" in build_instructions(make(role="guest"))
     assert "không xem được thu chi" not in build_instructions(make(role="member"))
+
+
+def test_co_vi_du_doi_lich_va_giao_viec() -> None:
+    text = build_instructions(make())
+    assert "propose_update_plan(" in text and "propose_create_task(" in text
+    assert "assignee_id=" in text
+
+
+def test_agent_co_du_6_tool_viec_lich() -> None:
+    from family_agent.harness.tools.plans import plan_toolset
+    from family_agent.harness.tools.tasks import task_toolset
+
+    names = set(task_toolset.tools) | set(plan_toolset.tools)
+    assert names == {
+        "propose_create_task", "propose_update_task", "propose_delete_task",
+        "propose_create_plan", "propose_update_plan", "propose_delete_plan",
+    }
+
+
+def test_build_agent_dang_ky_toolset_viec_lich() -> None:
+    from pydantic_ai.models.test import TestModel
+
+    from family_agent.harness.agent import TurnLimits, build_agent
+    from family_agent.harness.tools.plans import plan_toolset
+    from family_agent.harness.tools.tasks import task_toolset
+
+    agent = build_agent(TestModel(), TurnLimits())
+    assert task_toolset in agent.toolsets and plan_toolset in agent.toolsets

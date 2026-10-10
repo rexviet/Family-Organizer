@@ -18,7 +18,8 @@ const me = { userId: "u1", username: "me", role: UserRole.CHILD };
 
 let dir: string;
 let store: AgentStore;
-let mem: Pick<FamilyOrganizerDB, "shoppingItems" | "activityLogs">;
+// Dạng DB đã normalize (applyBatch luôn đưa bản đầy đủ) — chỉ các mảng mà apply đọc tới.
+let mem: Pick<FamilyOrganizerDB, "shoppingItems" | "activityLogs" | "tasks" | "plans" | "users" | "notifications">;
 let clock: { t: number };
 let failWrite: boolean;
 let writes: number;
@@ -34,14 +35,13 @@ function item(id: string, extra: Partial<ShoppingItem> = {}): ShoppingItem {
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "fo-agent-apply-"));
   store = new AgentStore(path.join(dir, "agent.db"));
-  mem = { shoppingItems: [item("s1"), item("s2", { isPurchased: true, purchasedById: "admin" })], activityLogs: [] };
+  mem = { shoppingItems: [item("s1"), item("s2", { isPurchased: true, purchasedById: "admin" })], activityLogs: [], tasks: [], plans: [], users: [], notifications: [] };
   clock = { t: T0 };
   failWrite = false;
   writes = 0;
   deps = {
     store,
     now: () => clock.t,
-    getShoppingItems: () => structuredClone(mem.shoppingItems),
     applyBatch: (fn) => {
       const copy = structuredClone(mem) as FamilyOrganizerDB;
       const r = fn(copy);
@@ -170,8 +170,8 @@ describe("applyProposal", () => {
     expect(mem.shoppingItems).toHaveLength(32);
   });
 
-  it("loại operation chưa bật ở M1 → 501, không ghi", () => {
-    const p = propose([{ type: "task.create", title: "Đổ rác" }]);
+  it("loại operation chưa bật (thu chi — M3) → 501, không ghi", () => {
+    const p = propose([{ type: "finance.create", txType: "expense", amount: 1000, category: "food", date: "2026-10-10", description: "x" }]);
     expect(applyProposal(deps, p.id, p.planHash, me)).toMatchObject({ status: 501, code: "unsupported" });
     expect(writes).toBe(0);
   });

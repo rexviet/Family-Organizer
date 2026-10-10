@@ -30,7 +30,8 @@ let enabled: boolean;
 let health: AgentHealth | null;
 let runImpl: (req: AgentRunRequest) => Promise<AgentRunResponse>;
 let runCalls: AgentRunRequest[];
-let mem: Pick<FamilyOrganizerDB, "shoppingItems" | "activityLogs">;
+// Dạng DB đã normalize (applyBatch luôn đưa bản đầy đủ) — chỉ các mảng mà apply đọc tới.
+let mem: Pick<FamilyOrganizerDB, "shoppingItems" | "activityLogs" | "tasks" | "plans" | "users" | "notifications">;
 let events: string[];
 let tokens: ReturnType<typeof createAgentTokens>;
 let previewViewers: unknown[];
@@ -52,7 +53,7 @@ beforeEach(async () => {
     shoppingItems: [{
       id: "s1", name: "Sữa", isPurchased: false, creatorId: "u_admin", createdAt: "x", updatedAt: "2026-10-01T00:00:00.000Z",
     } as ShoppingItem],
-    activityLogs: [],
+    activityLogs: [], tasks: [], plans: [], users: [], notifications: [],
   };
   events = [];
   previewViewers = [];
@@ -76,7 +77,6 @@ beforeEach(async () => {
     setEnabled: (v) => { enabled = v; },
     previewContext: (viewer) => { previewViewers.push(viewer); return { users: [], shoppingItems: mem.shoppingItems, tasks: [], plans: [], transactions: [] }; },
     applyDeps: {
-      getShoppingItems: () => structuredClone(mem.shoppingItems),
       applyBatch: (fn) => { const copy = structuredClone(mem) as FamilyOrganizerDB; const r = fn(copy); mem = copy; return r; },
     },
     broadcast: (e) => { events.push(e); },
@@ -329,6 +329,14 @@ describe("sau review", () => {
     expect(r.body.kind).toBe("answer");
     expect(r.body.proposal).toBeUndefined();
     expect(previewViewers).toEqual([]);
+    expect(r.body.reply).toContain("Thu chi");
+  });
+
+  it("M2: đề xuất việc/lịch được lưu + dựng preview", async () => {
+    runImpl = async () => answer("x", { kind: "proposal", operations: [{ type: "task.create", title: "Đổ rác" }] });
+    const r = await ask("tạo việc đổ rác");
+    expect(r.body.kind).toBe("proposal");
+    expect(r.body.proposal.preview[0].text).toContain("Đổ rác");
   });
 
   it("M1: preview dựng theo người hỏi", async () => {

@@ -109,3 +109,65 @@ describe("mutate đi chợ", () => {
     expect(FamilyDB.getActivityLogs()[0].action).toBe("Xóa đồ đi chợ");
   });
 });
+
+describe("endpoint Việc/Lịch dùng chung hàm mutate với trợ lý (giữ hành vi cũ)", () => {
+  it("saveTask tạo việc: mặc định + 1 dòng nhật ký + thông báo người được giao", () => {
+    const t = FamilyDB.saveTask({ title: "Rửa xe", assigneeId: "kid_x" }, "user_admin", "admin");
+    expect(t).toMatchObject({ title: "Rửa xe", status: "todo", priority: "medium", creatorId: "user_admin", isShared: true, rewardPoints: 0 });
+    expect(t.dueDate).toMatch(/^\d{4}-\d{2}-\d{2} 12:00$/);
+    expect(FamilyDB.getActivityLogs().filter((l) => l.details.includes('"Rửa xe"'))).toHaveLength(1);
+    expect(FamilyDB.getNotifications().some((n) => n.userId === "kid_x" && n.content.includes("Rửa xe"))).toBe(true);
+    FamilyDB.deleteTask(t.id, "user_admin", "admin");
+    expect(FamilyDB.getTasks().some((x) => x.id === t.id)).toBe(false);
+    expect(FamilyDB.getActivityLogs()[0].action).toBe("Xóa Task");
+  });
+
+  it("savePlan tạo/sửa/xoá; sự kiện chung có thông báo lưu trong app", () => {
+    const p = FamilyDB.savePlan({ title: "Picnic", startDate: "2026-10-20 08:00", endDate: "2026-10-20 12:00" }, "user_admin", "admin");
+    expect(p).toMatchObject({ title: "Picnic", color: "sky", isShared: true, isRecurring: false, recurrenceType: "none" });
+    expect(FamilyDB.getNotifications().some((n) => n.userId === "all" && n.content.includes("Picnic"))).toBe(true);
+    const u = FamilyDB.savePlan({ id: p.id, title: "Picnic hồ" }, "user_admin", "admin");
+    expect(u).toMatchObject({ title: "Picnic hồ", startDate: "2026-10-20 08:00", color: "sky" });
+    FamilyDB.deletePlan(p.id, "user_admin", "admin");
+    expect(FamilyDB.getPlans().some((x) => x.id === p.id)).toBe(false);
+    expect(FamilyDB.getActivityLogs()[0].action).toBe("Xóa Lịch trình");
+  });
+});
+
+it("savePlan sửa: body không đổi được người tạo / ngày tạo (chuyển lịch riêng sang người khác)", () => {
+  const p = FamilyDB.savePlan({ title: "Riêng", startDate: "2026-10-20 08:00", endDate: "2026-10-20 09:00", isShared: false }, "user_admin", "admin");
+  const u = FamilyDB.savePlan({ id: p.id, title: "Riêng 2", creatorId: "kid_x", createdAt: "1999" } as never, "user_admin", "admin");
+  expect(u).toMatchObject({ title: "Riêng 2", creatorId: "user_admin", createdAt: p.createdAt });
+  FamilyDB.deletePlan(p.id, "user_admin", "admin");
+});
+
+describe("tích hợp: Duyệt đề xuất Việc/Lịch ghi thật vào SQLite", () => {
+  it("task.create + task.update + plan.update qua FamilyDB thật; guard khớp bản ghi đã lưu", async () => {
+    const { AgentStore } = await import("./agentStore.js");
+    const { applyProposal } = await import("./agentApply.js");
+    const { fingerprint, planHash } = await import("./agentContract.js");
+    const { UserRole } = await import("../src/types.js");
+    const store = new AgentStore(path.join(tmp, "agent-int.db"));
+    try {
+      const t = FamilyDB.saveTask({ title: "Lau nhà", dueDate: "2026-10-12 17:00" }, "user_admin", "admin");
+      const p = FamilyDB.savePlan({ title: "Đi bơi", startDate: "2026-10-11 08:00", endDate: "2026-10-11 09:00" }, "user_admin", "admin");
+      const stored = FamilyDB.getPlans().find((x) => x.id === p.id)!;
+      const ops = [
+        { type: "task.create" as const, title: "Mua hoa", dueDate: "2026-10-15" },
+        { type: "task.update" as const, taskId: t.id, base: { updatedAt: t.updatedAt }, changes: { dueDate: "2026-10-14" } },
+        { type: "plan.update" as const, planId: p.id, base: { fingerprint: fingerprint("plan", stored) }, changes: { startDate: "2026-10-11 09:00", endDate: "2026-10-11 10:00" } },
+      ];
+      const prop = store.createProposal({ conversationId: "c", userId: "user_admin", operations: ops, planHash: planHash(ops), preview: [] }, Date.now());
+      const r = applyProposal({
+        store,
+        applyBatch: (fn) => FamilyDB.applyBatch(fn),
+      }, prop.id, prop.planHash, { userId: "user_admin", username: "admin", role: UserRole.ADMIN });
+      expect(r.status).toBe(200);
+      expect(FamilyDB.getTasks().find((x) => x.title === "Mua hoa")?.dueDate).toBe("2026-10-15 23:59");
+      expect(FamilyDB.getTasks().find((x) => x.id === t.id)?.dueDate).toBe("2026-10-14 17:00");
+      expect(FamilyDB.getPlans().find((x) => x.id === p.id)).toMatchObject({ startDate: "2026-10-11 09:00", color: "sky" });
+    } finally {
+      store.close();
+    }
+  });
+});

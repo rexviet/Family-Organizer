@@ -12,7 +12,7 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { FamilyDB, verifyPassword, getSessionSecret, getAppSettings, setAppSetting } from "./server/db.js";
 import { sqliteAppendServerMetric, sqliteGetServerMetrics } from "./server/sqlite.js";
-import { sanitizeTaskWrite } from "./server/permissions.js";
+import { sanitizeTaskWrite, canEditPlan, canDeletePlan } from "./server/permissions.js";
 import { createAgentTokens, isAgentToken } from "./server/agentToken.js";
 import { AgentStore } from "./server/agentStore.js";
 import { AgentClient } from "./server/agentClient.js";
@@ -1028,7 +1028,7 @@ app.post("/api/plans", requireAuth, requireRole([UserRole.ADMIN, UserRole.MEMBER
 
   if (planData.id) {
     const existing = FamilyDB.getPlans().find(p => p.id === planData.id);
-    if (existing && existing.creatorId !== session.userId && session.role !== UserRole.ADMIN) {
+    if (!canEditPlan(existing, session)) {
       res.status(403).json({ error: "Bạn chỉ có thể chỉnh sửa sự kiện do mình tạo. Admin có toàn quyền chỉnh sửa lịch." });
       return;
     }
@@ -1048,7 +1048,7 @@ app.delete("/api/plans/:id", requireAuth, requireRole([UserRole.ADMIN, UserRole.
   const { id } = req.params;
   const existing = FamilyDB.getPlans().find(p => p.id === id);
 
-  if (existing && existing.creatorId !== session.userId && session.role !== UserRole.ADMIN) {
+  if (!canDeletePlan(existing, session)) {
     res.status(403).json({ error: "Bạn chỉ có thể xóa sự kiện do mình tạo. Admin có toàn quyền quản lý lịch." });
     return;
   }
@@ -1949,16 +1949,17 @@ app.use(createAgentRouter({
   requireAuth: requireAuth as any,
   isEnabled: () => getAppSettings().agentEnabled === "1",
   setEnabled: (v) => setAppSetting("agentEnabled", v ? "1" : null),
-  previewContext: () => ({
+  // Preview chỉ đọc bản ghi người hỏi được xem (tên việc/lịch riêng của người khác không lọt lên thẻ Duyệt).
+  previewContext: (viewer) => ({
     users: FamilyDB.getUsers().map(u => ({ id: u.id, fullName: u.fullName })),
     shoppingItems: FamilyDB.getShoppingItems(),
-    tasks: FamilyDB.getTasks(),
-    plans: FamilyDB.getPlans(),
-    transactions: FamilyDB.getTransactions(),
+    tasks: FamilyDB.getTasks().filter(t => canSeeTask(t, viewer)),
+    plans: FamilyDB.getPlans().filter(p => canSeePlan(p, viewer)),
+    transactions: canSeeFinance(viewer.role) ? FamilyDB.getTransactions() : [],
   }),
   applyDeps: {
     applyBatch: (fn) => FamilyDB.applyBatch(fn),
-    getShoppingItems: () => FamilyDB.getShoppingItems(),
+    afterCommit: (notifications) => FamilyDB.pushNotifications(notifications),
   },
   broadcast: broadcastSyncEvent,
 }));

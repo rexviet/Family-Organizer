@@ -57,6 +57,15 @@ describe("buildPreview — việc", () => {
 });
 
 describe("buildPreview — lịch", () => {
+  it("plan.create lặp: ghi kiểu lặp + thứ + ngày lặp đến (kèm năm)", () => {
+    expect(one({
+      type: "plan.create", title: "Học bơi", startDate: "2026-10-13 18:00", endDate: "2027-10-13 19:00",
+      recurrenceType: "weekly", recurrenceWeekdays: [2, 4],
+    }).text).toBe('Tạo sự kiện "Học bơi" — 18:00 13/10 · lặp hằng tuần (T3, T5) tới 13/10/2027');
+    expect(one({
+      type: "plan.create", title: "Giỗ ông", startDate: "2026-11-02 09:00", endDate: "2036-11-02 10:00", recurrenceType: "yearly",
+    }).text).toBe('Tạo sự kiện "Giỗ ông" — 09:00 02/11 · lặp hằng năm tới 02/11/2036');
+  });
   it("plan.create / update / delete", () => {
     expect(one({ type: "plan.create", title: "Sinh nhật", startDate: "2026-10-20 18:00", endDate: "2026-10-20 21:00" }))
       .toEqual({ icon: "📅", text: 'Tạo sự kiện "Sinh nhật" — 18:00 20/10 → 21:00 20/10', tone: "add" });

@@ -4,7 +4,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { canEditTask, sanitizeTaskWrite } from "./permissions.js";
+import {
+  canEditTask, sanitizeTaskWrite, canCreateTask, canDeleteTask, canCreatePlan, canEditPlan, canDeletePlan,
+} from "./permissions.js";
 import { UserRole } from "../src/types.js";
 
 const task = { creatorId: "admin1", assigneeId: null as string | null };
@@ -83,5 +85,46 @@ describe("sanitizeTaskWrite", () => {
     const body = { id: "t", comments: [], title: "a" };
     sanitizeTaskWrite(body, task, adm);
     expect(body).toHaveProperty("comments");
+  });
+});
+
+// Ma trận khoá đúng hành vi endpoint gốc (server.ts) trước khi tách sang permissions.ts:
+// - POST /api/tasks (tạo): requireAuth → mọi vai trò.
+// - DELETE /api/tasks/:id: requireRole([ADMIN, MEMBER]).
+// - POST /api/plans: requireRole([ADMIN, MEMBER, CHILD]); sửa bản có sẵn chỉ người tạo hoặc admin.
+// - DELETE /api/plans/:id: như sửa lịch.
+describe("quyền Việc/Lịch theo vai trò (khớp endpoint gốc)", () => {
+  const A = { role: UserRole.ADMIN, userId: "a" };
+  const M = { role: UserRole.MEMBER, userId: "m" };
+  const C = { role: UserRole.CHILD, userId: "c" };
+  const G = { role: UserRole.GUEST, userId: "g" };
+  const planBy = (creatorId: string) => ({ creatorId });
+
+  it("tạo việc: mọi vai trò đã đăng nhập", () => {
+    for (const s of [A, M, C, G]) expect(canCreateTask(s)).toBe(true);
+  });
+  it("xoá việc: chỉ admin/thành viên", () => {
+    expect(canDeleteTask(A)).toBe(true);
+    expect(canDeleteTask(M)).toBe(true);
+    expect(canDeleteTask(C)).toBe(false);
+    expect(canDeleteTask(G)).toBe(false);
+  });
+  it("tạo lịch: admin/thành viên/trẻ, không cho khách", () => {
+    expect([A, M, C, G].map(canCreatePlan)).toEqual([true, true, true, false]);
+  });
+  it("sửa/xoá lịch: người tạo hoặc admin; khách không bao giờ", () => {
+    for (const fn of [canEditPlan, canDeletePlan]) {
+      expect(fn(planBy("x"), A)).toBe(true);
+      expect(fn(planBy("m"), M)).toBe(true);
+      expect(fn(planBy("a"), M)).toBe(false);
+      expect(fn(planBy("c"), C)).toBe(true);
+      expect(fn(planBy("a"), C)).toBe(false);
+      expect(fn(planBy("g"), G)).toBe(false);
+    }
+  });
+  it("sửa/xoá lịch không còn tồn tại: chỉ xét vai trò (endpoint gốc không chặn)", () => {
+    expect(canEditPlan(undefined, M)).toBe(true);
+    expect(canDeletePlan(null, C)).toBe(true);
+    expect(canDeletePlan(undefined, G)).toBe(false);
   });
 });
