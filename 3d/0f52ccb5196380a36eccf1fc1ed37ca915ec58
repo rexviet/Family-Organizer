@@ -1,0 +1,22 @@
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_190ed2db076a15 37
+plans/261010-1652-ai-agent/phase-07-deploy.md
+  s_409924ee63d935::t_190ed2db076a15 3,39-83
+  s_409924ee63d935::t_f148de620e937d 84-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3d0f52ccb5196380a36eccf1fc1ed37ca915ec58",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
