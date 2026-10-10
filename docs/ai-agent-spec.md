@@ -161,12 +161,12 @@ Quy ước: tên tiếng Anh, **docstring tiếng Việt**, có kiểu trả v�
 | Đi chợ | `propose_add_shopping_items(items)` | `shopping.add` | mọi role đã đăng nhập (như `POST /api/shopping`) |
 | | `propose_set_purchased(item_ids, purchased)` | `shopping.set_purchased` (đặt giá trị, không lật) | như `POST /api/shopping/:id/toggle` |
 | | `propose_remove_shopping_items(item_ids)` | `shopping.delete` | như `DELETE /api/shopping/:id` |
-| Việc | `propose_create_task(title, due?, assignee_id?, priority?, reward_points?, is_shared?, description?)` | `task.create` | như `POST /api/tasks` |
-| | `propose_update_task(task_id, changes)` — title/due/assignee/priority/status/description | `task.update` | con/khách chỉ việc mình tạo/được giao (`server.ts:911`) |
-| | `propose_delete_task(task_id)` | `task.delete` | admin/member |
-| Lịch | `propose_create_plan(title, start, end, is_shared?, recurrence?, description?)` | `plan.create` | admin/member/child |
-| | `propose_update_plan(plan_id, changes)` | `plan.update` | người tạo hoặc admin |
-| | `propose_delete_plan(plan_id)` | `plan.delete` | người tạo hoặc admin |
+| Việc | `propose_create_task(title, due_date?, assignee_id?, description?, priority?, reward_points?, is_shared?)` | `task.create` | như `POST /api/tasks`; con/khách không đặt điểm thưởng |
+| | `propose_update_task(task, title?, due_date?, assignee_id?, description?, priority?, status?)` — `task` là id hoặc tên; `assignee_id=""` = bỏ giao | `task.update` | con/khách chỉ việc mình tạo/được giao, được giao thì chỉ đổi trạng thái; không đụng việc chờ duyệt / trạng thái việc đã xong |
+| | `propose_delete_task(task)` | `task.delete` | admin/member |
+| Lịch | `propose_create_plan(title, start, end?, description?, is_shared?, recurrence_type?, recurrence_weekdays?, repeat_until?)` — lặp không nói tới khi nào = 1 năm | `plan.create` | admin/member/child |
+| | `propose_update_plan(plan, title?, start?, end?, description?, is_shared?)` — dời giờ bắt đầu sự kiện một lần thì kết thúc dời theo; đổi kiểu lặp làm trong app | `plan.update` | người tạo hoặc admin |
+| | `propose_delete_plan(plan)` | `plan.delete` | người tạo hoặc admin |
 | Thu chi | `propose_create_transaction(type, amount, category, date, description, account?)` | `finance.create` | admin/member |
 | | `propose_update_transaction(tx_id, changes)` | `finance.update` | admin/member |
 | | `propose_delete_transaction(tx_id)` | `finance.delete` | admin/member |

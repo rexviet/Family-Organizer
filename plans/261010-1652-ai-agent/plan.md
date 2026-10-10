@@ -35,7 +35,7 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | 5 | [Node: proxy, lưu trữ, Duyệt/apply](./phase-05-node-integration.md) | Done — E2E thật: đề xuất → Duyệt → món ở Đi chợ + SSE |
 | 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
 | 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Code done — updater 6 ca E2E local; chờ người dùng phát hành 1.2.0; thử + đo RAM trên Pi hoãn tới lần triển khai đầu |
-| 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Pending |
+| 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; chờ người dùng phát hành 1.3.0 (sau 1.2.0); thử 10 câu model thật hoãn |
 | 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Pending |
 
 Thứ tự: 1 → 2 → (3 → 4) ‖ 5 → 6 → 7 → phát hành M1 → 8 → M2 → 9 → M3.

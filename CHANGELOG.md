@@ -3,6 +3,24 @@
 Ghi theo phiên bản, mới nhất ở trên. Nội dung mục của từng phiên bản được dùng làm ghi chú
 hiển thị trong **Thiết lập → Hệ thống & Sao lưu → Phiên bản & Cập nhật**.
 
+## [1.3.0] - 2026-10-10
+
+### Mới
+- **Trợ lý nâng cao làm được Việc và Lịch**: nhờ trợ lý tạo, sửa, xoá việc và sự kiện — kiểu "giao Bin đổ rác trước 6 giờ tối mai", "dời họp phụ huynh sang 2 giờ chiều thứ Ba", "thêm lịch học bơi mỗi thứ Ba". Như với Đi chợ, trợ lý chỉ **đề xuất**; bạn xem thẻ rồi bấm **Duyệt** mới có thay đổi.
+  - Tên việc/lịch trùng nhau (vd. hai lịch "Sinh nhật") thì trợ lý hỏi lại kèm nút chọn.
+  - Dời giờ một sự kiện thì giờ kết thúc dời theo, giữ nguyên độ dài.
+  - Lịch lặp mà không nói lặp tới khi nào thì mặc định lặp 1 năm — thẻ Duyệt ghi rõ ngày, sửa lại được trong app.
+  - Trợ lý không đánh dấu hoàn thành, không duyệt hay trả lại việc của con — những việc đó vẫn làm trong mục **Việc**.
+  - Quyền giữ đúng như trong app: Con chỉ sửa việc mình tạo hoặc được giao (việc được giao thì chỉ đổi trạng thái), không tự đặt điểm thưởng, không xoá việc; Khách không thêm/sửa lịch; chỉ người tạo (hoặc Admin) sửa/xoá được một sự kiện.
+  - Nếu ai đó vừa sửa việc/lịch trong lúc bạn chưa bấm Duyệt, thẻ báo dữ liệu đã thay đổi và không ghi đè.
+
+### Sửa lỗi
+- Thêm sự kiện chung giờ hiện cả trong mục **Thông báo** của app (trước đây chỉ có thông báo đẩy trên điện thoại).
+- Sửa một sự kiện không còn vô tình đổi được người tạo của sự kiện đó.
+
+### Ghi chú
+- Quay về bản 1.2.0 vẫn được; đề xuất Việc/Lịch còn chờ Duyệt lúc đó sẽ báo "chưa hỗ trợ".
+
 ## [1.2.0] - 2026-10-10
 
 ### Mới
