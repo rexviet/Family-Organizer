@@ -46,7 +46,7 @@ Bật 3 operation thu chi (rủi ro cao nhất — sai số tiền) và dựng b
   instructions; Ví dụ 5 bỏ "hôm qua"; ví dụ lịch lặp nhiều thứ, câu nối 2 `propose_*` trong một `run_code`, id thành viên
   giữ chỗ; nhắc `ask_user` khi hỏi bằng chữ. Bộ chấm giữ strict (mơ hồ phải `clarification`, P04 tách 2 lịch vẫn sai — lý
   do trong báo cáo)
-- [ ] đạt ≥ 85% strict với model khuyến nghị ở cả 2 lần — **chưa chứng minh được**: đo đủ 57 câu sau sửa chỉ có haiku 84%
+- [x] ~~đạt ≥ 85% strict~~ — **người dùng chấp nhận hiện trạng (2026-10-11)**: 84% strict, 86–91% sau khi trừ lỗi bộ chấm, 0 sai số tiền, 0 ghi; đo lại code cuối khi router có hạn mức. Trước đây: **chưa chứng minh được**: đo đủ 57 câu sau sửa chỉ có haiku 84%
   (code chưa cuối) và deepseek 72% (code chưa cuối, hồi quy "đi chợ → food" đã sửa sau đó); code cuối mới đo 15 câu khó
   với deepseek (12/15, mơ hồ 7/9). Router trả 402 `MONTHLY_REQUEST_COUNT` cho cả hai model → chạy lại lệnh trong báo cáo
   khi có hạn mức (kèm `phase8_smoke.py`). An toàn vẫn đạt ở mọi lần: 0 sai số tiền, 0 ghi, vượt quyền 5/5
