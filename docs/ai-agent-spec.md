@@ -45,7 +45,7 @@ family-organizer (Node) ─ auth, rate-limit, flag, lưu hội thoại
    │ POST http://family-organizer-agent:3100/run   (X-Agent-Secret)
    ▼
 family-organizer-agent (Python) ─ pydantic-ai Agent + CodeMode (Monty) ─► LLM tương thích OpenAI (env)
-   │ tool đọc: GET http://family-organizer:3000/api/...  (Bearer token người hỏi)
+   │ tool đọc: GET http://family-organizer:3000/api/...  (Bearer token agent 120 s, chỉ GET allowlist)
    │ tool đề xuất: chỉ ghi vào AppDeps.outcome
    ▼ {answer | proposal | clarification}
 Node lưu proposal + dựng preview → trình duyệt hiện card

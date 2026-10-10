@@ -1,6 +1,6 @@
 # Phase 5 — Node: proxy, lưu trữ, Duyệt/apply
 
-**Priority:** P1 · **Effort:** 16h · **Status:** Pending
+**Priority:** P1 · **Effort:** 16h · **Status:** Done (2026-10-10)
 
 ## Context Links
 - Spec §3, §4, §8, §9, §10, §11
@@ -59,13 +59,45 @@ Dọn: hội thoại không hoạt động > 30 ngày, proposal > 7 ngày — g�
 7. Rate limit + flag + fallback.
 
 ## Todo
-- [ ] permissions.ts (refactor không đổi hành vi)
-- [ ] agent.db store + dọn dẹp
-- [ ] preview
-- [ ] apply engine + guard
-- [ ] agent client
-- [ ] routes + rate limit + flag
-- [ ] settings/agent
+- [x] permissions.ts — bản vá `comments` + `sanitizeTaskWrite` đã có từ commit `c4443b1`; đi chợ không có luật riêng (mọi vai trò đã đăng nhập), luật việc/lịch/thu chi tách tiếp ở phase 8–9 khi bật ghi
+- [x] agent.db store + dọn dẹp (`server/agentStore.ts`, gắn vào timer 30 phút; `applying` → `failed` lúc khởi động)
+- [x] preview (`server/agentPreview.ts`, đủ 12 loại op, tên bản ghi lấy từ DB)
+- [x] apply engine + guard (`server/agentApply.ts`, đồng bộ, một `FamilyDB.applyBatch`)
+- [x] agent client (`server/agentClient.ts`, health cache 30 s, run timeout 100 s)
+- [x] token agent 120 s chỉ-GET allowlist (`server/agentToken.ts`, nối vào `authMiddleware`, thu hồi khi lượt xong)
+- [x] ID hậu tố ngẫu nhiên (shop/task/plan/tx/log) + `applyBatch`/`writeRawOrThrow` + hàm thuần `server/dataMutations.ts`
+- [x] routes + rate limit + flag + fallback (`server/agentRoutes.ts`)
+- [x] settings/agent
+- [x] M5: đổi vai trò / xoá người dùng → xoá hội thoại + proposal pending
+
+## Kết quả (2026-10-10)
+
+- `npm run lint && npm test` xanh. Test mới: `db.batch`, `agentToken`, `agentStore`, `agentPreview`, `agentApply`, `agentClient`, `agentRoutes`.
+- Chạy thật (app trong thư mục tạm + agent Python phase 4 + model `kr/deepseek-3.2`): "thêm 1kg cà chua và hành lá vào đi chợ"
+  → card `🛒 Thêm 2 món: Cà chua (1kg), Hành lá` → Duyệt → 2 món trong DB; SSE phát `SHOPPING_UPDATE`. Token agent: GET `/api/shopping` 200,
+  POST `/api/shopping` 401, GET `/api/users/:id` 401.
+
+### Quyết định khi làm (--auto)
+- Token agent: `agt.<base64url(userId)>.<exp>.<nonce>.<hmac>` (base64url để id có dấu chấm không phá định dạng); khoá HMAC dẫn xuất từ
+  `SESSION_SECRET` (khác HMAC token đăng nhập); nonce giữ trong bộ nhớ → thu hồi ngay khi lượt xong (restart app = mọi token agent hết hiệu lực).
+- Proposal của người khác → **404** (không lộ tồn tại), không phải 409. Guard lệch / op chưa hỗ trợ → proposal chuyển `failed` (không thể thành công nữa).
+- `agent.db` thêm cột `turns` (dòng hiển thị cho UI — history ModelMessage không dùng để vẽ chat được), `preview`, `error`. `GET …/latest` không gửi
+  history thô xuống trình duyệt; trả `available` để UI phase 6 biết dùng agent hay assistant cũ.
+- Một người chỉ một lượt cùng lúc (429) — tránh hai lượt ghi đè history của nhau. Rate limit chỉ đếm lượt thực sự gọi agent.
+- Lỗi khi chạy (`llm_error`, `timeout`, không kết nối, phản hồi sai/lệch `contractVersion`) → 503 `{fallback:true}`; agent `busy` → 429 (không fallback).
+- Đề xuất sai hợp đồng → không lưu, trả `answer` xin nói lại.
+- Hàm thuần mới chỉ cho đi chợ (`mutateAddShopping/SetShoppingPurchased/DeleteShopping`); `mutateSaveTask/Plan/Transaction` để phase 8–9 (YAGNI ở M1).
+  ID mới có hậu tố đã áp cho task/plan/tx ngay. Bản cũ đọc ID dạng mới bình thường (chỉ là chuỗi) → "Quay về" an toàn.
+- `categoryLabel` cho preview thu chi chưa nối (M1 không có op thu chi) — phase 9.
+
+### Code review (8/10, 0 Critical/High) — đã sửa
+- M1 lộ dữ liệu qua preview: chỉ lưu/dựng preview cho loại op đã bật (loại khác → `answer`); `previewContext` lọc theo
+  `canSeeTask/canSeePlan/canSeeFinance` của người hỏi, đọc DB một lần (`FamilyDB.readSnapshot`).
+- M2 ghi family.db xong mà agent.db lỗi → vẫn trả thành công + broadcast.
+- M3 hội thoại bị xoá (đổi vai trò) trong lúc agent chạy → 409, không tạo proposal.
+- L2 agent.db hỏng không làm sập app (DB tạm trong bộ nhớ + tắt agent); L3 hậu tố ID 12 hex; L5 tắt agent → không Duyệt được; L6 "mới" dùng lại hội thoại trống.
+- Để lại: L1 (guard lệch vì món đã ở trạng thái đích/đã bị xoá vẫn tính conflict — giữ đúng luật "guard bằng `updatedAt`"), L7 (`/api/realtime` không
+  xác thực — lỗi có sẵn, ngoài phạm vi).
 
 ## Success Criteria
 `npm run lint && npm test` xanh; chạy với agent thật (phase 4): "thêm sữa, trứng vào đi chợ" → card → Duyệt → món xuất hiện ở tab Đi chợ của máy khác (sync realtime).

@@ -13,6 +13,10 @@ import { createServer as createViteServer } from "vite";
 import { FamilyDB, verifyPassword, getSessionSecret, getAppSettings, setAppSetting } from "./server/db.js";
 import { sqliteAppendServerMetric, sqliteGetServerMetrics } from "./server/sqlite.js";
 import { sanitizeTaskWrite } from "./server/permissions.js";
+import { createAgentTokens, isAgentToken } from "./server/agentToken.js";
+import { AgentStore } from "./server/agentStore.js";
+import { AgentClient } from "./server/agentClient.js";
+import { createAgentRouter } from "./server/agentRoutes.js";
 import type { Task } from "./src/types.js";
 import { UserRole, DishSlot, MealIngredient, DOCUMENT_TYPE_LABELS } from "./src/types.js";
 import { buildPlanFromLibrary, dedupeAndAnnotateGroceries } from "./src/utils/mealPlan.js";
@@ -142,6 +146,9 @@ app.use(express.json({ limit: "15mb" }));
 // per-install secret, so a guessable userId alone is no longer a valid session.
 const SESSION_SECRET = getSessionSecret();
 
+// Token ngắn hạn cho trợ lý AI agent (120 s, chỉ GET trên 9 endpoint đọc) — xem server/agentToken.ts.
+const agentTokens = createAgentTokens(SESSION_SECRET);
+
 function signToken(userId: string): string {
   const sig = crypto.createHmac("sha256", SESSION_SECRET).update(userId).digest("hex");
   return `${userId}.${sig}`;
@@ -219,7 +226,18 @@ const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => 
   }
 
   const token = authHeader.split(" ")[1];
-  const userId = verifyToken(token);
+  let userId: string | null;
+  if (isAgentToken(token)) {
+    // Token của agent: chỉ hợp lệ cho GET trên allowlist, mọi thứ khác 401 (không rơi về "chưa đăng nhập").
+    const auth = agentTokens.authorize(token, req.method, req.path);
+    if (!auth.ok) {
+      res.status(401).json({ error: "Token trợ lý không hợp lệ cho yêu cầu này." });
+      return;
+    }
+    userId = auth.userId;
+  } else {
+    userId = verifyToken(token);
+  }
   if (!userId) {
     next();
     return;
@@ -1909,6 +1927,42 @@ function normalizeAssistantActions(actions: any[]): any[] {
     .filter(Boolean);
 }
 
+// --- TRỢ LÝ AI AGENT (dịch vụ Python riêng; agent chỉ đề xuất, Node ghi khi người dùng Duyệt) ---
+// Hội thoại + đề xuất lưu ở data/agent.db (file riêng, ngoài backup). Agent chưa sẵn sàng →
+// /api/assistant/agent trả 503 {fallback:true} để UI dùng /api/assistant/chat cũ bên dưới.
+const agentStore = new AgentStore();
+const agentClient = new AgentClient({
+  url: process.env.AGENT_URL || "",
+  secret: process.env.AGENT_SHARED_SECRET || "",
+});
+try {
+  const stale = agentStore.failStaleApplying();
+  if (stale > 0) console.warn(`Trợ lý: ${stale} đề xuất bị cắt ngang lúc áp dụng → đánh dấu thất bại.`);
+} catch (e) {
+  console.error("Lỗi kiểm đề xuất trợ lý lúc khởi động:", e);
+}
+
+app.use(createAgentRouter({
+  store: agentStore,
+  client: agentClient,
+  tokens: agentTokens,
+  requireAuth: requireAuth as any,
+  isEnabled: () => getAppSettings().agentEnabled === "1",
+  setEnabled: (v) => setAppSetting("agentEnabled", v ? "1" : null),
+  previewContext: () => ({
+    users: FamilyDB.getUsers().map(u => ({ id: u.id, fullName: u.fullName })),
+    shoppingItems: FamilyDB.getShoppingItems(),
+    tasks: FamilyDB.getTasks(),
+    plans: FamilyDB.getPlans(),
+    transactions: FamilyDB.getTransactions(),
+  }),
+  applyDeps: {
+    applyBatch: (fn) => FamilyDB.applyBatch(fn),
+    getShoppingItems: () => FamilyDB.getShoppingItems(),
+  },
+  broadcast: broadcastSyncEvent,
+}));
+
 app.post("/api/assistant/chat", requireAuth, async (req: AuthRequest, res: Response) => {
   const apiKey = getGeminiKey();
   const message = String(req.body?.message || "").trim();
@@ -2329,6 +2383,7 @@ app.delete("/api/users/:id", requireAuth, requireRole([UserRole.ADMIN]), (req: A
 
   try {
     FamilyDB.deleteUser(id, session.userId, session.username);
+    agentStore.deleteUserData(id); // không giữ hội thoại/đề xuất của người đã xoá
     broadcastSyncEvent("USERS_UPDATE", { deletedId: id });
     res.json({ success: true });
   } catch (err: any) {
@@ -2347,7 +2402,10 @@ app.post("/api/users/:id", requireAuth, requireRole([UserRole.ADMIN]), (req: Aut
   }
 
   try {
+    const previousRole = FamilyDB.getUsers().find(u => u.id === id)?.role;
     const updated = FamilyDB.adminUpdateUser(id, { fullName, role, dateOfBirth, gender, phone, avatarColor, familyRelation }, session.userId, session.username);
+    // Đổi vai trò → bỏ hội thoại + đề xuất chờ duyệt của trợ lý (được soạn theo quyền cũ).
+    if (previousRole && updated.role !== previousRole) agentStore.deleteUserData(id);
     broadcastSyncEvent("USERS_UPDATE", { updatedId: id });
     res.json({ user: updated });
   } catch (err: any) {
@@ -2884,6 +2942,11 @@ async function startServer() {
       broadcastSyncEvent("NOTIFICATIONS_UPDATE");
     } catch (e) {
       console.error("Lỗi tạo nhắc deadline định kỳ:", e);
+    }
+    try {
+      agentStore.cleanup(); // hội thoại > 30 ngày, đề xuất > 7 ngày, đề xuất quá hạn → expired
+    } catch (e) {
+      console.error("Lỗi dọn dữ liệu trợ lý:", e);
     }
   }, 30 * 60 * 1000);
 

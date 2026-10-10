@@ -45,6 +45,9 @@ import { SEED_DISHES } from "../src/utils/mealPlan.js";
 import { isDebtFullyPaid } from "../src/utils/debt.js";
 import { sqliteIsEmpty, sqliteLoad, sqliteSave, sqliteCheckpoint } from "./sqlite.js";
 import { deleteMediaByUrl } from "./media.js";
+import { newId, mutateAddShopping, mutateDeleteShopping } from "./dataMutations.js";
+// Hàm sửa dữ liệu thuần dùng chung với apply của trợ lý — re-export cho tiện import.
+export { newId, mutateAddShopping, mutateSetShoppingPurchased, mutateDeleteShopping } from "./dataMutations.js";
 import { dispatchPush } from "./push.js";
 
 // Whitelist of valid asset types (mirrors AssetType in src/types.ts).
@@ -326,6 +329,23 @@ export class FamilyDB {
     } catch (e) {
       console.error("Lỗi ghi dữ liệu vào SQLite:", e);
     }
+  }
+
+  // Như writeRaw nhưng KHÔNG nuốt lỗi — người gọi phải biết ghi thất bại (apply của trợ lý).
+  private static writeRawOrThrow(db: FamilyOrganizerDB): void {
+    sqliteSave(db);
+  }
+
+  /**
+   * Đọc DB một lần, `fn` sửa trực tiếp trên bản đọc (qua các hàm mutate*), rồi ghi MỘT lần
+   * trong một transaction SQLite. `fn` ném lỗi hoặc ghi thất bại → không ghi gì và ném lỗi.
+   * `fn` phải đồng bộ (không await) để không có ghi khác xen giữa đọc và ghi.
+   */
+  public static applyBatch<T>(fn: (db: FamilyOrganizerDB) => T): T {
+    const db = this.readRaw();
+    const result = fn(db);
+    this.writeRawOrThrow(db);
+    return result;
   }
 
   // Activity logs helper
@@ -953,7 +973,7 @@ export class FamilyDB {
     } else {
       // CREATE Task
       const newTask: Task = {
-        id: `task_${Date.now()}`,
+        id: newId("task"),
         title: taskData.title || "Công việc mới",
         description: taskData.description || "",
         status: taskData.status || ("todo" as any),
@@ -1118,7 +1138,7 @@ export class FamilyDB {
     } else {
       // CREATE
       const newPlan: FamilyPlan = {
-        id: `plan_${Date.now()}`,
+        id: newId("plan"),
         title: planData.title || "Kế hoạch mới",
         description: planData.description || "",
         startDate: planData.startDate || new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -1271,7 +1291,7 @@ export class FamilyDB {
     const db = this.readRaw();
 
     const newTx: FinancialTransaction = {
-      id: txData.id ? txData.id : `tx_${Date.now()}`,
+      id: txData.id ? txData.id : newId("tx"),
       type: txData.type || ("expense" as any),
       amount: txData.amount || 0,
       category: txData.category || "other",
@@ -2178,22 +2198,13 @@ export class FamilyDB {
       return updated;
     }
 
-    const newItem: ShoppingItem = {
-      id: `shop_${Date.now()}`,
-      name: (data.name || "Món đồ").trim(),
-      quantity: data.quantity?.trim() || "",
-      note: data.note?.trim() || "",
-      cat: data.cat?.trim() || "",
-      isPurchased: false,
-      creatorId: userId,
-      purchasedById: null,
-      createdAt: now,
-      updatedAt: now
-    };
-    db.shoppingItems.unshift(newItem);
+    const newItem = mutateAddShopping(db, data, userId, username);
     this.writeRaw(db);
-    this.logActivity(userId, username, "Thêm đồ đi chợ", `Đã thêm "${newItem.name}" vào danh sách mua sắm.`);
     return newItem;
+  }
+
+  public static getShoppingItem(id: string): ShoppingItem | undefined {
+    return this.readRaw().shoppingItems.find(i => i.id === id);
   }
 
   public static toggleShoppingItem(id: string, userId: string): ShoppingItem {
@@ -2210,12 +2221,7 @@ export class FamilyDB {
 
   public static deleteShoppingItem(id: string, userId: string, username: string): void {
     const db = this.readRaw();
-    const idx = db.shoppingItems.findIndex(i => i.id === id);
-    if (idx === -1) return;
-    const name = db.shoppingItems[idx].name;
-    db.shoppingItems.splice(idx, 1);
-    this.writeRaw(db);
-    this.logActivity(userId, username, "Xóa đồ đi chợ", `Đã xóa "${name}" khỏi danh sách mua sắm.`);
+    if (mutateDeleteShopping(db, id, userId, username)) this.writeRaw(db);
   }
 
   public static clearPurchasedShopping(userId: string, username: string): number {
