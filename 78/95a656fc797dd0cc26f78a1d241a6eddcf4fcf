@@ -1,0 +1,21 @@
+.env.example
+  s_a61be62a9154b3::t_b794c69bef0076 12-13
+docker-compose.yml
+  s_a61be62a9154b3::t_b794c69bef0076 28-29,31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7895a656fc797dd0cc26f78a1d241a6eddcf4fcf",
+  "prompts": {},
+  "sessions": {
+    "s_a61be62a9154b3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd31c43f-8126-4ba5-b344-0d652abf5e2e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
