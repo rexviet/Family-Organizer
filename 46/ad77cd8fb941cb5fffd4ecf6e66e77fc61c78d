@@ -1,0 +1,26 @@
+plans/261010-1652-ai-agent/phase-09-finance-writes-eval.md
+  s_409924ee63d935::t_4ca091cc23923d 3,44-52
+plans/261010-1652-ai-agent/reports/phase-09-eval.md
+  s_409924ee63d935::t_c8808515ef0bf9 3-53,57-58
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_4ca091cc23923d 39,41-44
+agent/README.md
+  s_409924ee63d935::t_fdc2fc87bf28c5 78-79,81,83-87
+  s_409924ee63d935::t_74428117e60837 101-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "46ad77cd8fb941cb5fffd4ecf6e66e77fc61c78d",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
