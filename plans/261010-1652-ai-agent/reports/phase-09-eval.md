@@ -1,11 +1,61 @@
 # Phase 9 — Eval đầy đủ + khuyến nghị về assistant cũ (2026-10-10)
 
-## Kết quả chạy model thật (2026-10-10) — 2 model × 2 lần
+## Đợt 2 (2026-10-10 → 11): sửa bộ chấm + prompt/tool, đo lại — **dở dang vì hết hạn mức router**
+
+### Đã sửa (commit `8bb4a81`, TDD — agent 578 pytest, ruff + mypy sạch; Node 411 vitest + lint xanh)
+
+| Vấn đề ở đợt 1 | Xử lý |
+| :-- | :-- |
+| **S01** kỳ vọng thêm "trứng" trong khi fixture đã có Trứng chưa mua (tool cố ý bỏ qua) | Đổi câu thành "sữa chua và 2 chục quả chanh"; thêm test `test_mon_ky_vong_them_chua_co_trong_danh_sach` chặn kiểu kỳ vọng sai này |
+| Số tiền không đơn vị ("150", "1,5") bị model đoán đơn vị | **Trong code** (`money.amount_question/unitless_question`, `finance._amount`): model truyền nguyên văn số trần, tự gắn k/triệu, hoặc bịa số khi người dùng không nói số nào → tool **hỏi lại kèm lựa chọn** ("150.000đ" / "150.000.000đ"). Đối chiếu lời người dùng theo thứ tự tin nhắn (tin sau trả lời "nghìn"/bấm chip thì qua; tin cũ không xác nhận số mới); ngày/tháng/giờ không tính là số tiền. Review: H1 (số dính sau "tháng 9" bị nuốt), M1–M3 đã sửa + test |
+| F05 không chọn hạng mục tự thêm "Thú cưng" | Hạng mục chi tự thêm nạp đầu lượt (song song với thành viên, chỉ admin/member) và in vào instructions kèm luật ưu tiên |
+| Ví dụ 5 "Hôm qua đi chợ hết 250k" → F01 ra ngày hôm qua | Ví dụ 5 đổi thành "Đi chợ hết 300 nghìn" (không có ngày → bỏ trống `date`); luật: chỉ truyền `date` khi người dùng nói ngày |
+| P04 tách 2 lịch; C03 mất đề xuất thứ hai | Ví dụ 6: lịch lặp nhiều thứ = MỘT lịch `recurrence_weekdays=[1, 3]`; Ví dụ 7: câu nối gọi mọi `propose_*` trong CÙNG MỘT `run_code` (propose đầu tiên kết thúc lượt) |
+| Model chép `u_bin` | Ví dụ dùng chỗ giữ chỗ `<id của Bin trong bảng thành viên>` |
+| Hỏi lại bằng chữ thay vì `ask_user` | Luật prompt + output validator: câu trả lời kết thúc bằng "?" và chưa có đề xuất/câu hỏi → nhắc **một lần** "hỏi lại thì gọi ask_user, câu trả lời có dữ liệu thì trả lại nguyên văn" |
+
+### Quyết định về bộ chấm (không nới để qua)
+
+- **Mơ hồ hỏi bằng chữ — vẫn FAIL (strict).** `clarification` là thứ app dùng để hiện **nút chọn** và đánh dấu lượt đang
+  hỏi (`assistantAgent.ts`); câu hỏi trong `answer` không có lựa chọn nào. Plan chấm nghiêm từ đầu; cột Lenient vẫn
+  báo song song. Sửa ở phía agent (prompt + validator) thay vì nới bộ chấm.
+- **P04 tách thành 2 lịch [2] + [4] — vẫn FAIL.** App hỗ trợ một lịch weekly nhiều thứ; 2 bản ghi trùng dữ liệu, sửa/xoá/
+  dời phải làm 2 lần và dễ lệch nhau. Thêm test khẳng định bộ chấm từ chối cách tách này; sửa bằng Ví dụ 6.
+- **S01** là lỗi kỳ vọng thật (tool đúng thiết kế) → sửa câu, không sửa luật chấm.
+
+### Đo lại (router local, concurrency 1 trừ khi ghi khác) — chưa đủ 2 lần × 2 model
+
+| Lần | Code | Model | Strict | read | write | compound | ambiguous | forbidden | Sai số tiền | Ghi |
+| :-- | :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: |
+| a | sau sửa đợt 2, **trước** review/validator (concurrency 2) | `kr/claude-haiku-4.5` | **48/57 (84%)** | 13/15 | 23/24 | 2/4 | 5/9 | 5/5 | 0 | 0 |
+| b | sau review, **trước** validator + sửa Ví dụ 5 | `kr/deepseek-3.2` | **41/57 (72%)** | 14/15 | 18/24 | 2/4 | 2/9 | 5/5 | 0 | 0 |
+| c | **code cuối** (`8bb4a81`), 15 câu chọn lọc (9 mơ hồ + F01, F09, C02, R03, R12, R13) | `kr/deepseek-3.2` | 12/15 | 3/3 | 1/2 | 1/1 | 7/9 | – | 0 | 0 |
+| – | code cuối, đủ 57 câu × 2 lần × 2 model + `phase8_smoke` | cả hai | **không chạy được** | | | | | | | |
+
+- Lần (b) lộ hồi quy do chính đợt sửa: bỏ Ví dụ "đi chợ → food" làm F01/C02 ra `shopping` → đã khôi phục ánh xạ ở
+  Ví dụ 5 mới; lần (c) F01, C02 lại PASS. Lần (c) mơ hồ 7/9 (đợt 1: 3/9 và 5/9) — A08/A09 nay ra câu hỏi đơn vị của tool.
+- Lần (a)/(b) bị 429 khi chạy 2 model song song (một phần câu cuối lần 2 lỗi nhà cung cấp → bỏ, không tính).
+- Sau đó router trả **402 `MONTHLY_REQUEST_COUNT`** cho cả `kr/deepseek-3.2` và `kr/claude-haiku-4.5` (đã chờ > 8 phút,
+  vẫn 402) → không chạy được eval đầy đủ với code cuối, cũng không chạy lại `phase8_smoke.py`.
+- Từ đầu tới cuối: **0 sai số tiền, 0 request ghi, vượt quyền 5/5** ở mọi lần đã chạy.
+
+**Kết luận đợt 2:** tiêu chí ≥ 85% strict **chưa chứng minh được** — lần đo đủ 57 câu cao nhất vẫn 84% (haiku, code chưa
+cuối); code cuối mới đo 15 câu. Cần chạy lại khi hạn mức router phục hồi:
+
+```sh
+cd agent
+AGENT_LLM_BASE_URL=http://localhost:20128/v1 AGENT_LLM_API_KEY=x \
+  uv run python eval/run_eval.py --models kr/deepseek-3.2 kr/claude-haiku-4.5 --runs 2   # tuần tự, đừng chạy 2 tiến trình
+AGENT_LLM_BASE_URL=http://localhost:20128/v1 AGENT_LLM_API_KEY=x AGENT_LLM_MODEL=kr/deepseek-3.2 \
+  uv run python eval/phase8_smoke.py   # kiểm hồi quy phase 8 (≥ 7/10)
+```
+
+## Đợt 1 — kết quả chạy model thật (2026-10-10) — 2 model × 2 lần
 
 Router local `http://localhost:20128/v1`, env inline (không nạp `agent/.env`). Lệnh:
 `uv run python eval/run_eval.py --models <model> --runs 2`. Báo cáo chi tiết từng câu:
-[eval-kr-deepseek-3.2-2026-10-10.md](./eval-kr-deepseek-3.2-2026-10-10.md),
-[eval-kr-claude-haiku-4.5-2026-10-10.md](./eval-kr-claude-haiku-4.5-2026-10-10.md).
+[eval-kr-deepseek-3.2-2026-10-10-v1.md](./eval-kr-deepseek-3.2-2026-10-10-v1.md),
+[eval-kr-claude-haiku-4.5-2026-10-10-v1.md](./eval-kr-claude-haiku-4.5-2026-10-10-v1.md).
 
 | Model | Lần | Strict | Lenient | read | write | compound | ambiguous | forbidden | Sai số tiền | Thu chi ngoài ý | Ghi (≠ GET) | Lỗi NCC | Chậm nhất |
 | :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |

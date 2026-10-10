@@ -75,13 +75,16 @@ Các model trên chạy qua router OpenAI-compatible của người dùng; ngu�
 đường lui về assistant cũ. Không model nào cần sửa request (chưa cần lớp `compat.py`).
 
 Phase 4 (10 câu, [báo cáo](../plans/261010-1652-ai-agent/reports/phase-04-real-model.md)): `kr/deepseek-3.2` 9–10/10 qua
-5 lần, `kr/claude-haiku-4.5` 10/10. **Eval đầy đủ phase 9 (57 câu, cả ghi Thu chi): chưa chạy với model thật** — router
-LLM local không bật lúc làm phase 9; chạy lệnh ở mục "Eval" rồi điền bảng dưới.
+5 lần, `kr/claude-haiku-4.5` 10/10. Eval đầy đủ phase 9 (57 câu, cả ghi Thu chi;
+[báo cáo](../plans/261010-1652-ai-agent/reports/phase-09-eval.md)):
 
-| Model | Eval 57 câu (lần 1 / lần 2) | Sai số tiền | Ghi chú |
+| Model | Eval 57 câu (strict) | Sai số tiền | Ghi chú |
 | :--- | :--- | --: | :--- |
-| `kr/deepseek-3.2` | chưa chạy | – | |
-| `kr/claude-haiku-4.5` | chưa chạy | – | |
+| `kr/deepseek-3.2` | Đợt 1: 77% / 84%. Đợt 2 (sau sửa, code chưa cuối): 72% — code cuối mới đo 15 câu khó: 12/15 | 0 | **Khuyến nghị**; dùng `ask_user` tốt hơn; chậm (≤ 55 s/câu, có câu > 100 s) |
+| `kr/claude-haiku-4.5` | Đợt 1: 75% / 74%. Đợt 2 (sau sửa, code chưa cuối): 84% | 0 | Nhanh (≤ 10 s/câu); hay hỏi lại bằng chữ thay vì `ask_user` |
+
+Mọi lần: 0 request ghi tới app, câu vượt quyền 5/5. Ngưỡng ≥ 85% strict **chưa chứng minh** — đo lại với code cuối bị
+chặn vì router hết hạn mức tháng (402); chạy lại lệnh ở mục "Eval" rồi cập nhật bảng.
 
 ## Eval
 
@@ -95,7 +98,8 @@ AGENT_LLM_BASE_URL=http://localhost:20128/v1 AGENT_LLM_API_KEY=x \
   uv run python eval/run_eval.py --models kr/deepseek-3.2 kr/claude-haiku-4.5 --runs 2
 ```
 
-Báo cáo ghi vào `plans/261010-1652-ai-agent/reports/eval-<model>-<ngày>.md`. Tiêu chí: ≥ 85% với model khuyến nghị,
+Chạy tuần tự (hai tiến trình song song làm router trả 429). Báo cáo ghi vào
+`plans/261010-1652-ai-agent/reports/eval-<model>-<ngày>.md` (ghi đè báo cáo cùng ngày). Tiêu chí: ≥ 85% với model khuyến nghị,
 **0 operation thu chi sai số tiền**, 0 request ghi tới app (lệnh trả mã 1 nếu vi phạm hai điều sau).
 
 ## Chạy local

@@ -36,11 +36,12 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
 | 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Code done — updater 6 ca E2E local; chờ người dùng phát hành 1.2.0; thử + đo RAM trên Pi hoãn tới lần triển khai đầu |
 | 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; chờ người dùng phát hành 1.3.0 (sau 1.2.0); model thật `kr/deepseek-3.2` 7/10 & 8/10, 0 ghi — đạt |
-| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 513 pytest; eval 57 câu model thật: deepseek-3.2 77%/84%, haiku-4.5 75%/74% strict (86–91% sau khi trừ lỗi bộ chấm) — 0 sai số tiền, 0 ghi; ≥ 85% strict chưa đạt; chờ người dùng phát hành 1.4.0 (sau 1.3.0); assistant cũ giữ lại |
+| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 578 pytest; eval đợt 1: deepseek-3.2 77%/84%, haiku-4.5 75%/74% strict; đợt 2 đã sửa bộ câu + prompt/tool (`8bb4a81`), đo lại đầy đủ **bị chặn** (router hết hạn mức tháng) — ≥ 85% strict chưa chứng minh; 0 sai số tiền, 0 ghi ở mọi lần; chờ người dùng phát hành 1.4.0 (sau 1.3.0); assistant cũ giữ lại |
 
-**Trạng thái (2026-10-10):** mọi phase đã code xong. Còn lại (người dùng làm): phát hành 1.2.0 → 1.3.0 → 1.4.0
-(`npm run release`, chờ người dùng phát hành); đo RAM trên Pi. Eval model thật đã chạy (2026-10-10): phase 8 đạt; phase 9 an toàn
-đạt (0 sai số tiền, 0 ghi) nhưng điểm strict 74–84% < 85% — cần sửa kỳ vọng câu S01 + chỉnh prompt rồi chạy lại trước khi tính tới gỡ assistant cũ.
+**Trạng thái (2026-10-11):** mọi phase đã code xong. Còn lại: (1) **chạy lại eval phase 9 đầy đủ** với code cuối khi
+router LLM có hạn mức (đợt 2 bị 402 `MONTHLY_REQUEST_COUNT`; lệnh trong [báo cáo](./reports/phase-09-eval.md)) — chưa
+chứng minh ≥ 85% strict; (2) người dùng phát hành 1.2.0 → 1.3.0 → 1.4.0 (`npm run release`); (3) đo RAM trên Pi.
+Phase 8 đạt; phase 9 an toàn đạt (0 sai số tiền, 0 ghi) ở mọi lần đo.
 
 Thứ tự: 1 → 2 → (3 → 4) ‖ 5 → 6 → 7 → phát hành M1 → 8 → M2 → 9 → M3.
 Phase 3–4 (Python) và 5 (Node) chạy song song được sau khi 2 xong — ranh giới là hợp đồng ở phase 2.

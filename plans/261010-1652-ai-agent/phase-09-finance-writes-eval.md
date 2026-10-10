@@ -1,6 +1,6 @@
 # Phase 9 — Ghi Thu chi + eval đầy đủ (M3)
 
-**Priority:** P2 · **Effort:** 6h · **Status:** Code done — chờ người dùng phát hành 1.4.0 (sau 1.2.0, 1.3.0); eval với model thật hoãn (router LLM local không chạy)
+**Priority:** P2 · **Effort:** 6h · **Status:** Code done (+ đợt sửa sau eval `8bb4a81`) — eval model thật đợt 1 xong (74–84%); đo lại đầy đủ với code cuối bị chặn (router hết hạn mức tháng, 402); chờ người dùng phát hành 1.4.0 (sau 1.2.0, 1.3.0)
 
 ## Context Links
 - Spec §6.2 (Thu chi), §12
@@ -41,7 +41,15 @@ Bật 3 operation thu chi (rủi ro cao nhất — sai số tiền) và dựng b
 - [x] apply + preview thu chi — `canWriteFinance`, mutator dùng chung `dataMutations.ts`, merge khi sửa, guard fingerprint, xoá file hoá đơn sau khi ghi; nhãn hạng mục trên thẻ Duyệt
 - [x] khung eval 57 câu + báo cáo — `agent/eval/{run_eval.py, cases.json, fixtures/app.json}`; [báo cáo](./reports/phase-09-eval.md)
 - [x] chạy eval với ≥ 2 model × ≥ 2 lần — 2026-10-10 qua router local ([báo cáo](./reports/phase-09-eval.md)): `kr/deepseek-3.2` 77% / 84%, `kr/claude-haiku-4.5` 75% / 74% (strict); 0 sai số tiền, 0 request ghi, vượt quyền 5/5 ở cả 4 lần
-- [ ] đạt ≥ 85% strict — **chưa**: trừ lỗi bộ chấm (S01 kỳ vọng sai vì tool bỏ món đã có; mơ hồ hỏi bằng chữ; tách lịch 2 thứ) thì 86–91%. Cần sửa kỳ vọng S01 + chỉnh prompt (số tiền không đơn vị → hỏi lại, hạng mục tự thêm, Ví dụ 5 "hôm qua") rồi chạy lại
+- [x] sửa sau eval đợt 1 (`8bb4a81`, [báo cáo đợt 2](./reports/phase-09-eval.md)): kỳ vọng S01; số tiền không đơn vị /
+  model tự gắn đơn vị / bịa số → tool hỏi lại kèm lựa chọn (code, không chỉ prompt); hạng mục tự thêm nạp vào
+  instructions; Ví dụ 5 bỏ "hôm qua"; ví dụ lịch lặp nhiều thứ, câu nối 2 `propose_*` trong một `run_code`, id thành viên
+  giữ chỗ; nhắc `ask_user` khi hỏi bằng chữ. Bộ chấm giữ strict (mơ hồ phải `clarification`, P04 tách 2 lịch vẫn sai — lý
+  do trong báo cáo)
+- [ ] đạt ≥ 85% strict với model khuyến nghị ở cả 2 lần — **chưa chứng minh được**: đo đủ 57 câu sau sửa chỉ có haiku 84%
+  (code chưa cuối) và deepseek 72% (code chưa cuối, hồi quy "đi chợ → food" đã sửa sau đó); code cuối mới đo 15 câu khó
+  với deepseek (12/15, mơ hồ 7/9). Router trả 402 `MONTHLY_REQUEST_COUNT` cho cả hai model → chạy lại lệnh trong báo cáo
+  khi có hạn mức (kèm `phase8_smoke.py`). An toàn vẫn đạt ở mọi lần: 0 sai số tiền, 0 ghi, vượt quyền 5/5
 - [ ] phát hành 1.4.0 — CHANGELOG đã nháp; **chờ người dùng phát hành** (sau 1.2.0, 1.3.0)
 
 ## Kết quả (2026-10-10)
