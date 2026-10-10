@@ -1,6 +1,6 @@
 # Phase 9 — Ghi Thu chi + eval đầy đủ (M3)
 
-**Priority:** P2 · **Effort:** 6h · **Status:** Pending
+**Priority:** P2 · **Effort:** 6h · **Status:** Code done — chờ người dùng phát hành 1.4.0 (sau 1.2.0, 1.3.0); eval với model thật hoãn (router LLM local không chạy)
 
 ## Context Links
 - Spec §6.2 (Thu chi), §12
@@ -36,11 +36,33 @@ Bật 3 operation thu chi (rủi ro cao nhất — sai số tiền) và dựng b
 4. Phát hành M3 (hỏi trước khi push tag).
 
 ## Todo
-- [ ] parse tiền
-- [ ] 3 tool thu chi
-- [ ] apply + preview thu chi
-- [ ] eval 50 câu + báo cáo
-- [ ] phát hành 1.4.0
+- [x] parse tiền — `harness/money.py` (`parse_vnd`), 70 ca test (≥ 30 cách viết đúng + các ca nhập nhằng phải từ chối)
+- [x] 3 tool thu chi — `tools/finance.py` (+ `records.resolve` thêm `name_key`), ví dụ trong instructions
+- [x] apply + preview thu chi — `canWriteFinance`, mutator dùng chung `dataMutations.ts`, merge khi sửa, guard fingerprint, xoá file hoá đơn sau khi ghi; nhãn hạng mục trên thẻ Duyệt
+- [x] khung eval 57 câu + báo cáo — `agent/eval/{run_eval.py, cases.json, fixtures/app.json}`; [báo cáo](./reports/phase-09-eval.md)
+- [ ] chạy eval với ≥ 2 model × ≥ 2 lần — **hoãn**: router LLM local tắt; lệnh ở báo cáo, chạy khi router bật
+- [ ] phát hành 1.4.0 — CHANGELOG đã nháp; **chờ người dùng phát hành** (sau 1.2.0, 1.3.0)
+
+## Kết quả (2026-10-10)
+- Node: `npm run lint` + `npm test` (411 test) + `npm run build` xanh. Mới: `agentApply.finance.test.ts` (17 ca: merge giữ ảnh hoá đơn + mọi trường, 409 fingerprint lệch, 422 số tiền lẻ/hạng mục không còn/ngày sai/nội dung rỗng, 403 Con/Khách, xoá file sau ghi, ghi lỗi không xoá file), `db.batch.test.ts` (SQLite thật: Duyệt sửa số tiền giữ hoá đơn; nhật ký thu chi được lưu), preview + permissions.
+- Agent: `uv run pytest` 513 xanh (mới: `test_money.py`, `test_finance_tools.py`, `test_eval_harness.py`), ruff + mypy strict sạch.
+
+## Quyết định (--auto)
+- **Eval nằm ở `agent/eval/`** (cùng chỗ `phase4_smoke.py`/`phase8_smoke.py`), không phải `agent/tests/eval/` như plan: `testpaths = ["tests"]` sẽ gom nó vào pytest. Bộ câu dạng **JSON** (`cases.json`) — không thêm phụ thuộc `pyyaml`. LLM-judge tuỳ chọn không làm (YAGNI).
+- Số tiền: số trần < 1.000 ("đi chợ hết 150"), đuôi 2 chữ số sau đơn vị ("1tr50": 1,5 triệu hay 1.050.000?), "1,5"/"1.500k" không rõ, hai số cách nhau bằng khoảng trắng → **từ chối, model hỏi lại**. Đuôi 1 chữ số = phần mười ("1tr2"), 3 chữ số = theo vị trí ("1tr250", "1tr050").
+- Khoản CHI: hạng mục phải là mặc định chưa ẩn hoặc gia đình tự thêm (Python + Node cùng luật); không rõ → hỏi lại kèm ≤ 10 lựa chọn (tự thêm trước, "Khoản khác" cuối). Khoản THU: chữ tự do như form (gợi ý `INCOME_CATEGORIES`). Không đổi được thu ↔ chi qua trợ lý.
+- Nội dung bỏ trống khi tạo → lấy tên hạng mục; Node từ chối nội dung rỗng (form app bắt buộc). Ví bỏ trống → mặc định của app (Ngân hàng), thẻ Duyệt ghi ví khi có.
+- Sửa/xoá theo id hoặc nội dung; khớp nhiều → ưu tiên giao dịch 31 ngày gần đây, còn nhiều → hỏi lại (nhãn "Nội dung — 250.000₫ — dd/MM").
+- Admin/Thành viên sửa/xoá được mọi giao dịch (đúng như `POST/DELETE /api/finance`, không chặn theo người tạo).
+- `BUILTIN_EXPENSE_CATEGORIES` tách sang `src/utils/builtinExpenseCategories.ts` (không import i18n) để server dùng chung.
+- **Assistant cũ: KHÔNG gỡ** — chưa đủ điều kiện (eval chưa chạy thật, chưa bản nào phát hành); khuyến nghị + lộ trình ở [báo cáo](./reports/phase-09-eval.md).
+- Sửa lỗi có sẵn: `saveTransaction` tạo/sửa ghi nhật ký rồi `writeRaw(db)` đè mất dòng nhật ký; form sửa giao dịch xoá ảnh hoá đơn cũ **trước** khi ghi (ghi lỗi → bản ghi trỏ tới file đã mất) → nay xoá sau khi ghi.
+
+## Code review (7.5/10, không Critical) — đã xử lý
+- H1 số trần "150" thành 150 đ → từ chối < 1.000. H2 "1 triệu 50" thành 1,5 triệu → từ chối đuôi 2 chữ số. H3 "10 20" dính thành 1.020 → từ chối số cách khoảng trắng (trừ "1 000 000"). M1 đuôi quá dài ("1tr2000000") → từ chối.
+- M2 eval: đoán hạng mục ở câu mơ hồ bị tính "sai số tiền" → tách cột "Thu chi ngoài ý". M3 eval: "1,5" bị đọc thành 15 → chỉ bỏ dấu khi đúng nhóm nghìn. Thêm câu A09 "đi chợ hết 150".
+- M4 (có sẵn) xoá ảnh hoá đơn trước khi ghi → sau khi ghi. L1 xoá từng file riêng. L2 Node từ chối nội dung rỗng.
+- Để nguyên: L3 nhãn hạng mục ở nhật ký hoạt động dùng bảng riêng (có sẵn, chỉ là chữ); L4 số tiền trong nhật ký nay dạng vi-VN "250.000".
 
 ## Success Criteria
 Test xanh; eval ≥ 85% với model khuyến nghị; 0 operation thu chi sai số tiền trong eval.

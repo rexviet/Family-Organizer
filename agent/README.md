@@ -74,6 +74,30 @@ kiểu `LLM_API_KEY` của service khác trong stack không ảnh hưởng.
 Các model trên chạy qua router OpenAI-compatible của người dùng; nguồn này có thể đổi bất ngờ → app luôn có
 đường lui về assistant cũ. Không model nào cần sửa request (chưa cần lớp `compat.py`).
 
+Phase 4 (10 câu, [báo cáo](../plans/261010-1652-ai-agent/reports/phase-04-real-model.md)): `kr/deepseek-3.2` 9–10/10 qua
+5 lần, `kr/claude-haiku-4.5` 10/10. **Eval đầy đủ phase 9 (57 câu, cả ghi Thu chi): chưa chạy với model thật** — router
+LLM local không bật lúc làm phase 9; chạy lệnh ở mục "Eval" rồi điền bảng dưới.
+
+| Model | Eval 57 câu (lần 1 / lần 2) | Sai số tiền | Ghi chú |
+| :--- | :--- | --: | :--- |
+| `kr/deepseek-3.2` | chưa chạy | – | |
+| `kr/claude-haiku-4.5` | chưa chạy | – | |
+
+## Eval
+
+`eval/run_eval.py` + `eval/cases.json` (57 câu: đọc, ghi Đi chợ/Việc/Lịch/Thu chi, câu nối, mơ hồ, vượt quyền khi đăng nhập
+Con) + app giả `eval/fixtures/app.json`. Không nằm trong image, không chạy bởi pytest (luật chấm có unit test ở
+`tests/unit/test_eval_harness.py`). Điểm dao động giữa các lần → chạy mỗi model ≥ 2 lần:
+
+```sh
+cd agent
+AGENT_LLM_BASE_URL=http://localhost:20128/v1 AGENT_LLM_API_KEY=x \
+  uv run python eval/run_eval.py --models kr/deepseek-3.2 kr/claude-haiku-4.5 --runs 2
+```
+
+Báo cáo ghi vào `plans/261010-1652-ai-agent/reports/eval-<model>-<ngày>.md`. Tiêu chí: ≥ 85% với model khuyến nghị,
+**0 operation thu chi sai số tiền**, 0 request ghi tới app (lệnh trả mã 1 nếu vi phạm hai điều sau).
+
 ## Chạy local
 
 ```sh
@@ -123,9 +147,11 @@ tên lớp). **Không** log nội dung hội thoại, token, key hay URL LLM.
 | `deps.py` | `AppDeps` mỗi lượt; client HTTP chỉ-GET + allowlist 9 endpoint; cache 1 request/endpoint/lượt; lỗi tiếng Việt cố định (không URL/token) |
 | `outcome.py`, `clarify.py` | `OutcomeSlot` (≤ 10 op, không trùng, mỗi op qua `contract.validate_operations`), `ClarificationSink` |
 | `end_when_settled.py` | Kết thúc lượt ngay khi có đề xuất hoặc câu hỏi (không request model thứ 2) |
-| `prompts.py` | Instructions: ngày/thứ, tuần này (Thứ Hai–Chủ nhật), bảng thành viên, hạng mục chi, luật đề xuất, 2 ví dụ |
+| `prompts.py` | Instructions: ngày/thứ, tuần này (Thứ Hai–Chủ nhật), bảng thành viên, hạng mục chi, luật đề xuất, 6 ví dụ |
+| `money.py` | `parse_vnd`: "250k", "1tr2", "1,5 triệu", "2 triệu rưỡi"… → số nguyên đồng; nhập nhằng ("1,5", "1.500k") → lỗi để model hỏi lại |
 | `recurrence.py` | Bản port `src/utils/recurrence.ts`; case kiểm dùng chung `src/utils/recurrence.cases.json` (vitest + pytest) |
 | `tools/read.py`, `tools/shopping.py`, `tools/ask.py` | 9 tool đọc, 3 tool đề xuất đi chợ, `ask_user` |
+| `tools/tasks.py`, `tools/plans.py`, `tools/finance.py` (+ `tools/records.py` dùng chung) | 3 tool đề xuất mỗi module Việc/Lịch/Thu chi; tìm bản ghi theo id hoặc tên, mơ hồ → hỏi lại ≤ 5 lựa chọn |
 
 `agentToken` chỉ nằm trong header của client HTTP của lượt — không vào instructions, tham số/kết quả tool, history hay log.
 
@@ -137,4 +163,5 @@ tên lớp). **Không** log nội dung hội thoại, token, key hay URL LLM.
   `2 × AGENT_CODE_MAX_DURATION_S < AGENT_RUN_TIMEOUT_S` (mặc định 30 < 90). Lượt vẫn bị cắt
   cứng ở `AGENT_RUN_TIMEOUT_S` ở điểm `await` kế tiếp (504).
 - `APP_INTERNAL_URL` phải là URL gốc (không path). Model không làm nổi yêu cầu (hết retry) → `answer` thân thiện, không phải 502.
-- Thử tay với model thật: `eval/phase4_smoke.py` (không nằm trong image, không chạy bởi pytest) — xem docstring đầu file.
+- Thử tay với model thật: `eval/phase4_smoke.py`, `eval/phase8_smoke.py` (10 câu) và eval đầy đủ `eval/run_eval.py` (mục "Eval")
+  — không nằm trong image, không chạy bởi pytest.

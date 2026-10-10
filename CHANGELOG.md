@@ -3,6 +3,24 @@
 Ghi theo phiên bản, mới nhất ở trên. Nội dung mục của từng phiên bản được dùng làm ghi chú
 hiển thị trong **Thiết lập → Hệ thống & Sao lưu → Phiên bản & Cập nhật**.
 
+## [1.4.0] - 2026-10-10
+
+### Mới
+- **Trợ lý nâng cao ghi được Thu chi**: nhờ trợ lý ghi, sửa, xoá khoản thu/chi — kiểu "hôm nay đi chợ hết 250k", "tiền điện tháng 9 thực ra là 900 nghìn, sửa lại giúp mình", "xoá khoản đổ xăng hôm 7/10". Như các mục khác, trợ lý chỉ **đề xuất**; bạn xem thẻ rồi bấm **Duyệt** mới có thay đổi.
+  - Thẻ Duyệt luôn ghi **số tiền đầy đủ** (vd. 1.200.000₫), Thu hay Chi, hạng mục, ngày; sửa thì hiện "cũ → mới", xoá hiện màu đỏ.
+  - Số tiền nói kiểu "250k", "1tr2", "1,5 triệu", "2 triệu rưỡi" được đổi chính xác; nói chưa rõ (vd. "1,5" mà không có đơn vị) thì trợ lý hỏi lại chứ không đoán.
+  - Khoản chi phải thuộc một hạng mục đang dùng (kể cả hạng mục gia đình tự thêm); chưa rõ hạng mục thì trợ lý hỏi lại kèm nút chọn. Không nói ngày thì ghi hôm nay.
+  - Sửa qua trợ lý chỉ đổi đúng thứ bạn nói — ảnh hoá đơn và các thông tin khác giữ nguyên. Xoá giao dịch thì xoá luôn ảnh hoá đơn của nó.
+  - Chỉ Admin và Thành viên nhờ trợ lý ghi thu chi được (giống trong app). Nếu ai đó vừa sửa giao dịch trong lúc bạn chưa bấm Duyệt, thẻ báo dữ liệu đã thay đổi và không ghi đè.
+  - Vài giao dịch cũ có số tiền lẻ (không tròn đồng) thì trợ lý không sửa/xoá được — bạn sửa trực tiếp trong mục **Thu chi**.
+
+### Sửa lỗi
+- Nhật ký hoạt động giờ ghi lại đầy đủ việc thêm và sửa giao dịch thu chi (trước đây dòng nhật ký có thể bị mất).
+
+### Ghi chú
+- Trợ lý cũ vẫn được giữ làm đường lui khi trợ lý nâng cao tắt hoặc tạm lỗi.
+- Quay về bản 1.3.0 vẫn được; đề xuất Thu chi còn chờ Duyệt lúc đó sẽ báo "chưa hỗ trợ".
+
 ## [1.3.0] - 2026-10-10
 
 ### Mới

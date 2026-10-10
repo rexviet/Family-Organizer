@@ -1,7 +1,7 @@
 ---
 title: "Trợ lý AI Agent (Pydantic AI + CodeMode)"
 description: "Thay /api/assistant/chat bằng agent chạy container riêng, đọc/ghi Đi chợ, Việc, Lịch, Thu chi qua API có sẵn; agent chỉ đề xuất, người dùng Duyệt thì Node mới ghi."
-status: in-progress
+status: code-complete
 priority: P2
 effort: 68h
 branch: main
@@ -36,7 +36,10 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 | 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
 | 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Code done — updater 6 ca E2E local; chờ người dùng phát hành 1.2.0; thử + đo RAM trên Pi hoãn tới lần triển khai đầu |
 | 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; chờ người dùng phát hành 1.3.0 (sau 1.2.0); thử 10 câu model thật hoãn |
-| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Pending |
+| 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Code done — 411 vitest + 513 pytest; khung eval 57 câu xong, chạy model thật hoãn (router tắt); chờ người dùng phát hành 1.4.0 (sau 1.3.0); assistant cũ giữ lại |
+
+**Trạng thái (2026-10-10):** mọi phase đã code xong. Còn lại (người dùng làm): phát hành 1.2.0 → 1.3.0 → 1.4.0
+(`npm run release`, chờ người dùng phát hành); chạy eval model thật (`agent/eval/run_eval.py`) + thử tay phase 8; đo RAM trên Pi.
 
 Thứ tự: 1 → 2 → (3 → 4) ‖ 5 → 6 → 7 → phát hành M1 → 8 → M2 → 9 → M3.
 Phase 3–4 (Python) và 5 (Node) chạy song song được sau khi 2 xong — ranh giới là hợp đồng ở phase 2.
