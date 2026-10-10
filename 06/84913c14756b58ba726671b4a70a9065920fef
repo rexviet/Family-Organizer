@@ -1,0 +1,31 @@
+plans/261010-1652-ai-agent/phase-09-finance-writes-eval.md
+  s_409924ee63d935::t_4fcf53739f3072 3,39-65
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_4fcf53739f3072 4,39-42
+agent/README.md
+  s_409924ee63d935::t_af607e1dc35f49 150-151,154
+  s_409924ee63d935::t_48f9baf9ef5a2b 77,79-80,82-87,89-100,166-167
+  s_409924ee63d935::t_c6c474880f4b90 78,81,88
+plans/261010-1652-ai-agent/reports/phase-09-eval.md
+  s_409924ee63d935::t_4fcf53739f3072 28,32,39-40
+  s_409924ee63d935::t_c6c474880f4b90 25
+  s_409924ee63d935::t_d343d762852d13 1-24,26-27,29-31,33-38,41-53
+CHANGELOG.md
+  s_409924ee63d935::t_69937feb0df088 6-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0684913c14756b58ba726671b4a70a9065920fef",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
