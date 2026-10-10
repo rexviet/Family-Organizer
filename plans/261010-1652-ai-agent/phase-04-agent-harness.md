@@ -56,6 +56,13 @@ Agent thật: 9 tool đọc, `ask_user`, 3 tool đề xuất đi chợ, `EndWhen
 ## Success Criteria
 pytest xanh; với model đã chọn ở spike: 10 câu ≥ 7 đúng, không lượt nào ghi dữ liệu.
 
+## Ghi chú từ review phase 3
+- `asyncio.timeout` của `/run` chỉ huỷ được ở điểm `await`: nếu `run_code` (Monty) chạy đồng bộ trên event loop thì
+  timeout 90 s và `/health` đều treo; nếu qua `to_thread` thì slot trả lại khi luồng còn chạy. Dựa vào
+  `resource_limits.max_duration_secs` (< `AGENT_RUN_TIMEOUT_S`) và thêm test: lượt chạy code lâu vẫn 504, `/health` vẫn trả lời.
+- `history` trả cho Node chứa cả tool return → `agentToken` chỉ được nằm trong deps/http client, không bao giờ trong
+  instructions/tool args/message. Test: sau lượt có gọi tool, `TOKEN not in json.dumps(history)`.
+
 ## Risk Assessment
 - Model gọi tool bằng tên/kiểu sai → stub rõ + few-shot 2 ví dụ trong instructions.
 - `history` phình → cắt 20 lượt theo ranh giới tin nhắn người dùng (không tóm tắt tool return — YAGNI).

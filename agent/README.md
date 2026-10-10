@@ -1,0 +1,104 @@
+# family-organizer-agent
+
+Dịch vụ trợ lý AI (Python, Pydantic AI + CodeMode) chạy cạnh app Node. Spec: [docs/ai-agent-spec.md](../docs/ai-agent-spec.md).
+Agent **chỉ đề xuất** — mọi thay đổi dữ liệu do Node ghi sau khi người dùng Duyệt.
+
+> Trạng thái: khung dịch vụ (phase 3). `/run` hiện là agent rỗng, chưa có tool đọc/đề xuất (phase 4).
+
+## Endpoint
+
+Chỉ có hai endpoint, cổng `3100`, **không publish port** — chỉ app gọi được qua mạng compose.
+
+| Endpoint | Mô tả |
+| :--- | :--- |
+| `GET /health` | `{ok, llmConfigured, model, version, contractVersion}` — không bao giờ có key/base_url |
+| `POST /run` | Header `X-Agent-Secret` (so sánh constant-time). Body theo spec §4 |
+
+Mã lỗi của `/run` (body luôn là `{"error": "<mã>"}`):
+
+| HTTP | `error` | Khi nào |
+| :--- | :--- | :--- |
+| 400 | `client_disconnected` | Node ngắt khi đang gửi body |
+| 401 | `unauthorized` | Sai/thiếu `X-Agent-Secret` (kiểm **trước** mọi thứ khác) |
+| 503 | `llm_not_configured` | Thiếu 1 trong 3 biến `AGENT_LLM_BASE_URL/API_KEY/MODEL` |
+| 413 | `too_large` | Body > `AGENT_MAX_BODY_BYTES` |
+| 422 | `invalid_request` | Body sai — kèm `errors[{loc,msg,type}]`, **không** echo giá trị (tránh lộ token) |
+| 429 | `busy` | Đã đủ số lượt đồng thời — trả ngay, không xếp hàng |
+| 504 | `timeout` | Lượt chạy quá `AGENT_RUN_TIMEOUT_S` |
+| 502 | `llm_error` | Endpoint LLM lỗi (chi tiết chỉ log tên lớp lỗi) |
+
+Thành công: `{kind, reply, history, usage:{requests,toolCalls,inputTokens,outputTokens}, contractVersion}`.
+Node phải từ chối khi `contractVersion` lệch với bản của mình.
+
+## Biến môi trường
+
+| Biến | Mặc định | Ghi chú |
+| :--- | :--- | :--- |
+| `AGENT_SHARED_SECRET` | — | **Bắt buộc**, ≥ 32 ký tự ASCII in được (vd `openssl rand -hex 32`); sai → container thoát (exit 2, không in giá trị) |
+| `AGENT_LLM_BASE_URL` | — | Endpoint tương thích OpenAI (Chat Completions + tool calling), vd `https://api.openai.com/v1` |
+| `AGENT_LLM_API_KEY` | — | |
+| `AGENT_LLM_MODEL` | — | Đổi model không cần build lại |
+| `AGENT_LLM_TEMPERATURE` | (không gửi) | 0–2 |
+| `AGENT_LLM_TIMEOUT_S` | `60` | Timeout mỗi request tới LLM |
+| `AGENT_LLM_MAX_TOKENS` | (không gửi) | |
+| `APP_INTERNAL_URL` | `http://family-organizer:3000` | App Node trong mạng compose (tool đọc, phase 4) |
+| `AGENT_VERSION` | `dev` | CI truyền qua `--build-arg AGENT_VERSION=X.Y.Z` |
+| `AGENT_RUN_TIMEOUT_S` | `90` | Timeout cứng của một lượt |
+| `AGENT_MAX_CONCURRENT_RUNS` | `2` | Quá thì 429 |
+| `AGENT_MAX_BODY_BYTES` | `4194304` | |
+
+Biến để rỗng (`${X:-}` trong compose) được coi như không đặt. Chỉ đọc đúng các tên trên (có tiền tố) — biến
+kiểu `LLM_API_KEY` của service khác trong stack không ảnh hưởng.
+
+## Model đã kiểm chứng (spike phase 1, [báo cáo](../plans/261010-1652-ai-agent/reports/spike-s1.md))
+
+| Model | Điểm 10 câu | Ghi chú |
+| :--- | :--- | :--- |
+| `kr/deepseek-3.2` | 10/10 | **Khuyến nghị mặc định**; chậm hơn (đến ~24 s câu đọc nhiều bước) |
+| `kr/qwen3-coder-next` | 8/10 | |
+| `kr/claude-haiku-4.5` | 7–9/10 | Nhanh nhất (≤ 11 s) |
+| `kr/claude-sonnet-4.5` | 7/10 | |
+
+Các model trên chạy qua router OpenAI-compatible của người dùng; nguồn này có thể đổi bất ngờ → app luôn có
+đường lui về assistant cũ. Không model nào cần sửa request (chưa cần lớp `compat.py`).
+
+## Chạy local
+
+```sh
+cd agent
+uv sync                                   # Python 3.12, cài cả nhóm dev
+uv run pytest                             # unit + vector hợp đồng (agent/contracts/vectors.json)
+uv run ruff check src tests && uv run mypy
+
+AGENT_SHARED_SECRET=$(openssl rand -hex 32) \
+AGENT_LLM_BASE_URL=http://localhost:20128/v1 AGENT_LLM_API_KEY=... AGENT_LLM_MODEL=kr/deepseek-3.2 \
+uv run python -m family_agent             # nghe 0.0.0.0:3100
+```
+
+Image arm64 (Pi):
+
+```sh
+docker build --platform linux/arm64 --build-arg AGENT_VERSION=dev -t family-organizer-agent agent
+docker run --rm -p 127.0.0.1:3100:3100 -e AGENT_SHARED_SECRET=... family-organizer-agent   # thử local
+curl localhost:3100/health
+```
+
+Image chạy user `app` (uid 10001), không mount gì, có `HEALTHCHECK` gọi `/health`. Schema hợp đồng được chép vào
+`/app/contracts` (`AGENT_CONTRACTS_DIR`).
+
+## Phụ thuộc
+
+Pin **chính xác** theo spike: `pydantic-ai-slim[openai]==2.33.0`, `pydantic-ai-harness[codemode]==0.25.0`,
+`pydantic-monty==0.0.21` (monty 1.x đổi tên key `resource_limits` → mọi `run_code` lỗi). Luôn commit `uv.lock`;
+image build bằng `uv sync --frozen`.
+
+## Log
+
+Mỗi lượt một dòng JSON: `userId, role, status, kind, requests, toolCalls, inputTokens, outputTokens, ms` (lỗi: `error` =
+tên lớp). **Không** log nội dung hội thoại, token, key hay URL LLM.
+
+## Hợp đồng operation
+
+`src/family_agent/contract.py` — `canonical`, `plan_hash`, `fingerprint`, `validate_operations`; xem
+[contracts/README.md](contracts/README.md). Đổi hợp đồng → tăng `contractVersion`, sửa cả bản Node
+(`server/agentContract.ts`) và `vectors.json` trong cùng một thay đổi.

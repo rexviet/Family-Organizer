@@ -1,6 +1,6 @@
 # Phase 3 — Agent service (Python) khung
 
-**Priority:** P1 · **Effort:** 6h · **Status:** Pending
+**Priority:** P1 · **Effort:** 6h · **Status:** Done (2026-10-10)
 
 ## Context Links
 - Spec §3.1, §4, §5
@@ -51,11 +51,38 @@ agent/
 6. Dockerfile + `docker build --platform linux/arm64`; `docker run` → `/health` 200.
 
 ## Todo
-- [ ] Skeleton + pin
-- [ ] contract.py khớp vectors
-- [ ] /health, /run, auth, semaphore, timeout
-- [ ] Dockerfile arm64 chạy được
-- [ ] README agent
+- [x] Skeleton + pin
+- [x] contract.py khớp vectors
+- [x] /health, /run, auth, semaphore, timeout
+- [x] Dockerfile arm64 chạy được
+- [x] README agent
+
+## Kết quả (2026-10-10)
+
+- `uv run pytest`: 122 test xanh (70 hợp đồng/vector + unit app/settings/model/main); `ruff check` + `mypy --strict` sạch.
+- Image `docker build --platform linux/arm64`: chạy `aarch64`, user `app` (uid 10001), `HEALTHCHECK` healthy,
+  RAM idle ~65 MiB. `/health` đúng cả 2 trạng thái; secret ngắn → exit 2 không in giá trị; `/docs` 404.
+
+**Quyết định (--auto):**
+- Hợp đồng `/run` dùng `agentToken` (theo spec §4 sau red-team) thay cho `userToken` ghi ở Requirements — `SecretStr`.
+- Body `/run` tự đọc + validate (không để FastAPI tự parse) để **secret kiểm trước body** và 422 không bao giờ echo
+  `input`; vẫn đăng ký handler `RequestValidationError` an toàn phòng hờ.
+- Thêm `413 too_large` (`AGENT_MAX_BODY_BYTES`, mặc định 4 MiB), `504 timeout`, `502 llm_error`; giới hạn
+  timeout/đồng thời cấu hình được qua `AGENT_RUN_TIMEOUT_S`, `AGENT_MAX_CONCURRENT_RUNS` (mặc định 90 s / 2).
+- `/health` và `/run` trả thêm `contractVersion` (README hợp đồng yêu cầu). Tắt `/docs`, `/redoc`, `/openapi.json`.
+- `contract.py` là bộ kiểm JSON Schema thu nhỏ đọc thẳng `operations.schema.json` (port từ `server/agentContract.ts`),
+  không dùng thư viện `jsonschema` (vì `$` của `re` và `1.0` là integer). Image chép schema vào `/app/contracts`
+  (`AGENT_CONTRACTS_DIR`).
+- Thêm sẵn `ruff` + `mypy` (nhóm dev) để job CI của phase 7 chỉ việc gọi.
+- `RunRequest`/`RunUser` để `extra="ignore"` — Node bản mới thêm trường không làm hỏng agent bản cũ.
+
+**Sau code review (8.5/10, 0 critical) — đã sửa:** bỏ `populate_by_name` (High: làm pydantic-settings đọc cả env
+không tiền tố `LLM_API_KEY`, `RUN_TIMEOUT_S`… → biến lạc trong stack đổi được endpoint/giới hạn); `TimeoutError`
+từ bên trong model → 502, chỉ hết hạn của lượt mới là 504; client ngắt khi gửi body → 400 không traceback; huỷ lượt
+→ trả slot + log `status 499`; log `{"event":"rejected","status"}` cho 401/413/422/429/503; secret phải ASCII in
+được, không khoảng trắng hai đầu; OpenAI client `max_retries=1`; schema bắt buộc pattern có `^…$`.
+**Chưa sửa (ghi nhận):** `uniqueItems` phía Node báo thêm lỗi "trùng" với số ngoài 2^53 (cả hai bên vẫn từ chối —
+chỉ khác danh sách lỗi); base image chưa pin digest.
 
 ## Success Criteria
 `uv run pytest` xanh; image arm64 khởi động, `/health` đúng cả 2 trạng thái cấu hình.
