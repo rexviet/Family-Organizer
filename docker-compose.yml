@@ -25,8 +25,10 @@ services:
       # Bind only to loopback + LAN IP (NOT 0.0.0.0) so the Tailscale interface
       # stays free for `tailscale serve` to expose HTTPS on the same port 3001.
       # This matches the rest of the homelab (immich/homepage/etc).
+      # LAN_IP = IP LAN của máy chạy (mặc định IP của Pi). Chạy thử trên máy
+      # khác thì đặt LAN_IP trong .env, nếu không Docker báo "can't assign requested address".
       - "127.0.0.1:3001:3000"
-      - "192.168.1.2:3001:3000"
+      - "${LAN_IP:-192.168.1.2}:3001:3000"
     volumes:
       # Persistent storage on Raspberry Pi 5.
       # DB file + uploaded images (avatars/assets/receipts) + daily backups.
