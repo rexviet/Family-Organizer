@@ -1,0 +1,62 @@
+agent/tests/unit/test_prompts.py
+  s_409924ee63d935::t_cd8b8d4e4d0a18 112
+  s_409924ee63d935::t_84a1c3539cc1e0 118-164
+  s_409924ee63d935::t_6ecbaac75a048b 165-171
+agent/tests/unit/test_run_flow.py
+  s_409924ee63d935::t_af5510affa68cc 256
+  s_409924ee63d935::t_97e98cfd78301b 630-665
+  s_409924ee63d935::t_bce08e8d1d2b31 57-60,101,163-205
+  s_409924ee63d935::t_075ad6d84dd2b3 213
+  s_409924ee63d935::t_28011ae42e25dd 206-207
+agent/src/family_agent/harness/tools/finance.py
+  s_409924ee63d935::t_7eac397900403d 21,43-60,177-179,236-239
+  s_409924ee63d935::t_7568ef53727af5 66,70-88,90
+agent/src/family_agent/harness/agent.py
+  s_409924ee63d935::t_6ecbaac75a048b 9,268-285
+  s_409924ee63d935::t_9ea39432c93c30 73-83,129-132
+  s_409924ee63d935::t_7568ef53727af5 40,187-194,288
+agent/src/family_agent/harness/money.py
+  s_409924ee63d935::t_edccc422b0e1e3 135-140,143,147,157-172,212-216,223-225,234,238-253
+  s_409924ee63d935::t_0ff9e1c98c87f4 10,141-142,144-146,148-156,173-211,217-222,226-233,235-237
+agent/eval/cases.json
+  s_409924ee63d935::t_7692e2a4c3398e 194,196,203
+agent/tests/unit/test_finance_tools.py
+  s_409924ee63d935::t_7eac397900403d 194
+  s_409924ee63d935::t_e573275e3c9522 187,215
+  s_409924ee63d935::t_d6883515bbbbda 170-186,188-193,195-214
+  s_409924ee63d935::t_d9e01e1883d1d4 216-217
+agent/src/family_agent/harness/prompts.py
+  s_409924ee63d935::t_7568ef53727af5 36-38,42-45,135
+  s_409924ee63d935::t_7dce81ee00af48 56-57,62,66,69-72,87-89,94-101
+  s_409924ee63d935::t_bdaf73dcc6d258 64-65
+  s_409924ee63d935::t_bae53cfb553613 67-68
+  s_409924ee63d935::t_cd8b8d4e4d0a18 92-93
+  s_409924ee63d935::t_6ecbaac75a048b 17-18,39-41
+agent/src/family_agent/harness/deps.py
+  s_409924ee63d935::t_7eac397900403d 114-117
+  s_409924ee63d935::t_9ea39432c93c30 125
+agent/tests/unit/test_money.py
+  s_409924ee63d935::t_e5759193adfb28 85-86,88-140
+  s_409924ee63d935::t_21104723f8210c 6,87
+  s_409924ee63d935::t_8d304e375348db 141-170
+agent/tests/unit/test_eval_harness.py
+  s_409924ee63d935::t_001a81a58f16b6 128,130,135-137
+  s_409924ee63d935::t_21104723f8210c 61-68,70-71
+  s_409924ee63d935::t_4a1fdb38689673 69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8bb4a81acfdc6647a632ee7c3b1e4fa28309f405",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
