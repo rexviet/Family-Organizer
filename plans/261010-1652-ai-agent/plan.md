@@ -1,7 +1,7 @@
 ---
 title: "Trợ lý AI Agent (Pydantic AI + CodeMode)"
 description: "Thay /api/assistant/chat bằng agent chạy container riêng, đọc/ghi Đi chợ, Việc, Lịch, Thu chi qua API có sẵn; agent chỉ đề xuất, người dùng Duyệt thì Node mới ghi."
-status: released-pending-pi
+status: completed
 priority: P2
 effort: 68h
 branch: main
@@ -28,18 +28,18 @@ Ba mốc phát hành (minor), mỗi mốc dùng được độc lập:
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Spike: Monty arm64, RAM, model](./phase-01-spike.md) | Done — GO (RAM Pi đo ở phase 7) |
+| 1 | [Spike: Monty arm64, RAM, model](./phase-01-spike.md) | Done — GO (đo RAM trên Pi: người dùng miễn) |
 | 2 | [Hợp đồng operation + planHash](./phase-02-contracts.md) | Done |
 | 3 | [Agent service (Python) khung](./phase-03-agent-service.md) | Done |
 | 4 | [Agent harness: tool đọc, hỏi lại, đề xuất đi chợ](./phase-04-agent-harness.md) | Done — 346 pytest, model thật 9–10/10, 0 ghi |
 | 5 | [Node: proxy, lưu trữ, Duyệt/apply](./phase-05-node-integration.md) | Done — E2E thật: đề xuất → Duyệt → món ở Đi chợ + SSE |
 | 6 | [UI trợ lý + Thiết lập](./phase-06-ui.md) | Done — card Duyệt / chip hỏi lại / fallback; chạy tay Sáng+Tối+390 px |
-| 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Code done — updater 6 ca E2E local; chờ người dùng phát hành 1.2.0; thử + đo RAM trên Pi hoãn tới lần triển khai đầu |
+| 7 | [Triển khai: compose, release 2 image, updater, CI](./phase-07-deploy.md) | Done — updater 6 ca E2E local; đã phát hành v1.2.0 (fork); thử + đo RAM trên Pi: người dùng miễn (2026-10-11) |
 | 8 | [Ghi Việc + Lịch (M2)](./phase-08-task-plan-writes.md) | Code done — 390 vitest + 395 pytest; đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11); model thật `kr/deepseek-3.2` 7/10 & 8/10, 0 ghi — đạt |
 | 9 | [Ghi Thu chi + eval (M3)](./phase-09-finance-writes-eval.md) | Done — 411 vitest + 578 pytest; eval đợt 1 (`kr/*`): 74–84% strict; sửa `8bb4a81`; **đợt 3 code cuối (OpenRouter, 2026-10-11): `anthropic/claude-haiku-5.5` 100% / 100% strict — đạt ≥ 85%, model khuyến nghị**; deepseek-v4-pro 98%/98%, deepseek-v4-flash 98%/95%; 0 sai số tiền, 0 ghi ở mọi lần; đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11); assistant cũ giữ lại (chưa chạy thật trên Pi) |
 
 **Trạng thái (2026-10-11):** mọi phase đã code xong, eval với model thật **đạt toàn bộ tiêu chí**: phase 9 đợt 3 với code cuối qua OpenRouter — `anthropic/claude-haiku-5.5` 100% / 100% strict (≥ 85%), 0 sai số tiền, 0 ghi; smoke phase 8 code cuối 10/10 ([báo cáo](./reports/phase-09-eval.md)). **Đã phát hành v1.2.0** (gộp M1–M3) trên fork `rexviet/Family-Organizer` — image `ghcr.io/rexviet/*:1.2.0`. **Chỉ còn đo trên Pi**, do người dùng: đo RAM + thử cập nhật/Quay về ở lần triển khai đầu (lưu ý compose/updater còn trỏ `happysmartlight`); sau đó mới cân nhắc gỡ assistant cũ.
-Phase 8 đạt; phase 9 đạt cả chất lượng (≥ 85% strict) lẫn an toàn (0 sai số tiền, 0 ghi) ở mọi lần đo.
+Phase 8 đạt; phase 9 đạt cả chất lượng (≥ 85% strict) lẫn an toàn (0 sai số tiền, 0 ghi) ở mọi lần đo. **Plan hoàn thành (2026-10-11):** người dùng miễn các mục kiểm trên Pi (đo RAM, thử cập nhật/Quay về) — nên làm khi triển khai lên Pi.
 
 Thứ tự: 1 → 2 → (3 → 4) ‖ 5 → 6 → 7 → phát hành M1 → 8 → M2 → 9 → M3.
 Phase 3–4 (Python) và 5 (Node) chạy song song được sau khi 2 xong — ranh giới là hợp đồng ở phase 2.

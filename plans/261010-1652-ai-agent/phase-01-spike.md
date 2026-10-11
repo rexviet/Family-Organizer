@@ -24,7 +24,7 @@ Trả lời 4 câu trước khi viết code thật. Kết quả là `reports/spi
 ## Todo
 - [x] Monty import + chạy trên arm64 (container `linux/arm64` trên Mac; Pi thật kiểm ở phase 7)
 - [x] Số đo RAM rảnh / đỉnh — Mac arm64: rảnh 74–84 MiB, đỉnh 101–123 MiB dưới cgroup 300 MiB
-- [ ] Số đo RAM trên Pi 5 — **hoãn sang phase 7** (không truy cập được Pi từ máy làm spike)
+- [x] Số đo RAM trên Pi 5 — **người dùng miễn (2026-10-11)** — không bắt buộc cho plan; nên làm khi triển khai lên Pi; trước đó: hoãn sang phase 7 (không truy cập được Pi từ máy làm spike)
 - [ ] Ollama tool calling (YC 3d) — **hoãn** (máy không có Ollama); thay bằng 2 model open-weight qua endpoint OpenAI-compatible, đều chạy `run_code` đúng
 - [x] Bảng 10 câu × ≥ 2 model (5 model, 4 đạt ≥ 7/10)
 - [x] Quyết định go/no-go + version pin — **GO**; pin slim 2.33.0 / harness 0.25.0 / monty 0.0.21

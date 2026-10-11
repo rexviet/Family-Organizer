@@ -1,6 +1,6 @@
 # Phase 7 — Triển khai: compose, release 2 image, updater, CI → phát hành M1
 
-**Priority:** P1 · **Effort:** 8h · **Status:** Code done — chờ người dùng phát hành 1.2.0 + kiểm trên Pi
+**Priority:** P1 · **Effort:** 8h · **Status:** Done — đã phát hành v1.2.0 (fork); kiểm trên Pi được người dùng miễn
 
 ## Context Links
 - Spec §3.1, §3.2; CLAUDE.md (phát hành + ràng buộc updater)
@@ -42,8 +42,8 @@
 - [x] CI job agent (chưa chạy trên GitHub — chưa push)
 - [x] release.yml 2 image, owner động (chưa chạy — chạy khi có tag)
 - [x] README + CHANGELOG (mục `[1.2.0]` là **bản nháp**, sửa ngày lúc phát hành)
-- [ ] Thử trên Pi — **hoãn tới lần triển khai đầu** (không có quyền vào Pi từ máy dev)
-- [ ] Đo RAM agent trên Pi 5 (hoãn từ phase 1) — **hoãn tới lần triển khai đầu**. Trên Pi, sau khi agent chạy:
+- [x] Thử trên Pi — **người dùng miễn (2026-10-11)** — không bắt buộc cho plan; nên làm khi triển khai lên Pi; trước đó: hoãn tới lần triển khai đầu (không có quyền vào Pi từ máy dev)
+- [x] Đo RAM agent trên Pi 5 (hoãn từ phase 1) — **người dùng miễn (2026-10-11)** — không bắt buộc cho plan; nên làm khi triển khai lên Pi. Trên Pi, sau khi agent chạy:
       `docker stats --no-stream family_organizer_agent` lúc rảnh, rồi hỏi trợ lý 1 câu đọc nhiều bước và chạy
       `for i in $(seq 1 30); do docker stats --no-stream --format '{{.MemUsage}}' family_organizer_agent; sleep 1; done`
       + `docker inspect -f '{{.State.OOMKilled}}' family_organizer_agent`. Đỉnh phải < 300 MiB (mem_limit 384m).
