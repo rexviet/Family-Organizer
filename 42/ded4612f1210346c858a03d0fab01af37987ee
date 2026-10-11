@@ -1,0 +1,24 @@
+plans/261010-1652-ai-agent/phase-01-spike.md
+  s_409924ee63d935::t_51cd3f6491ac2c 27
+plans/261010-1652-ai-agent/plan.md
+  s_409924ee63d935::t_51cd3f6491ac2c 4
+  s_409924ee63d935::t_d6b666045695b3 31,37,42
+plans/261010-1652-ai-agent/phase-07-deploy.md
+  s_409924ee63d935::t_51cd3f6491ac2c 3,45-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "42ded4612f1210346c858a03d0fab01af37987ee",
+  "prompts": {},
+  "sessions": {
+    "s_409924ee63d935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ca4d012-90d3-404a-8c78-22ea1f17c800",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
