@@ -1,0 +1,29 @@
+server/permissions.test.ts
+  s_a61be62a9154b3::t_b6a81877f1dc1a 36-87
+  s_a61be62a9154b3::t_f33442888a2853 1-6,8-35
+  s_a61be62a9154b3::t_543e65a6fce666 7
+server/permissions.ts
+  s_a61be62a9154b3::t_f33442888a2853 1-22
+  s_a61be62a9154b3::t_543e65a6fce666 23-66
+server.ts
+  s_a61be62a9154b3::t_35d6b38a0adb5a 16
+  s_a61be62a9154b3::t_a13688993f0f30 17
+  s_a61be62a9154b3::t_6772e255f4f4e7 919
+  s_a61be62a9154b3::t_543e65a6fce666 15,916-918,920-921,923,926-927,934
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "00f45277728b9a795004a23a25cb0c4826394f22",
+  "prompts": {},
+  "sessions": {
+    "s_a61be62a9154b3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cd31c43f-8126-4ba5-b344-0d652abf5e2e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Viet Phung <vietphung@everfit.io>"
+    }
+  }
+}
