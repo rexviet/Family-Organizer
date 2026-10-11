@@ -1,5 +1,63 @@
 # Phase 9 — Eval đầy đủ + khuyến nghị về assistant cũ (2026-10-10)
 
+## Đợt 3 — OpenRouter, code cuối (2026-10-11) — **ĐẠT ≥ 85% strict**
+
+Router local vẫn hết hạn mức → chạy qua OpenRouter (`AGENT_LLM_BASE_URL=https://openrouter.ai/api/v1`, khoá nạp từ
+`agent/.env`, không ghi ở đâu; model đè bằng `--models`). Code cuối = `8bb4a81` (sau đó chỉ có commit tài liệu/phát
+hành v1.2.0). Bộ chấm **giữ nguyên strict** như đợt 2 (mơ hồ phải `clarification`, không nới). Chạy tuần tự, concurrency 1:
+
+```sh
+cd agent && set -a; . ./.env; set +a
+uv run python eval/run_eval.py --models anthropic/claude-haiku-5.5 deepseek/deepseek-v4-pro --runs 2
+uv run python eval/run_eval.py --models deepseek/deepseek-v4-flash --runs 2
+```
+
+Báo cáo từng câu: [eval-anthropic-claude-haiku-5.5-2026-10-11.md](./eval-anthropic-claude-haiku-5.5-2026-10-11.md),
+[eval-deepseek-deepseek-v4-pro-2026-10-11.md](./eval-deepseek-deepseek-v4-pro-2026-10-11.md),
+[eval-deepseek-deepseek-v4-flash-2026-10-11.md](./eval-deepseek-deepseek-v4-flash-2026-10-11.md).
+
+| Model | Lần | Strict | read | write | compound | ambiguous | forbidden | Sai số tiền | Thu chi ngoài ý | Ghi (≠ GET) | Lỗi NCC | Chậm nhất |
+| :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
+| `anthropic/claude-haiku-5.5` | 1 | **57/57 (100%)** | 15/15 | 24/24 | 4/4 | 9/9 | 5/5 | **0** | 0 | **0** | 0 | 66 s* |
+| `anthropic/claude-haiku-5.5` | 2 | **57/57 (100%)** | 15/15 | 24/24 | 4/4 | 9/9 | 5/5 | **0** | 0 | **0** | 0 | 7 s |
+| `deepseek/deepseek-v4-pro` | 1 | **56/57 (98%)** | 14/15 | 24/24 | 4/4 | 9/9 | 5/5 | **0** | 0 | **0** | 0 | 51 s |
+| `deepseek/deepseek-v4-pro` | 2 | **56/57 (98%)** | 14/15 | 24/24 | 4/4 | 9/9 | 5/5 | **0** | 0 | **0** | 0 | 34 s |
+| `deepseek/deepseek-v4-flash` | 1 | **56/57 (98%)** | 15/15 | 23/24 | 4/4 | 9/9 | 5/5 | **0** | 0 | **0** | 0 | 21 s |
+| `deepseek/deepseek-v4-flash` | 2 | **54/57 (95%)** | 14/15 | 23/24 | 4/4 | 8/9 | 5/5 | **0** | 0 | **0** | 0 | 37 s |
+
+\* Máy Mac ngủ giữa lần 1 (pmset: Sleep 09:31 → Wake 10:20) — câu R13 (65,5 s) vắt qua lúc ngủ, không phải độ trễ
+model; phần còn lại của haiku ≤ 9 s/câu. Các lần sau chạy dưới `caffeinate`.
+
+### Đọc tay các câu FAIL (bộ chấm strict giữ nguyên — không câu nào là lỗi bộ chấm)
+
+| Model | Lần | Câu | Model làm gì | Phân loại |
+| :-- | :-- | :-- | :-- | :-- |
+| deepseek-v4-pro | 1, 2 | R10 "Khoản chi lớn nhất tháng này?" | Trả lời "tháng này chưa có khoản chi nào" (2 request, fixture có 5 khoản chi tháng 10) | lỗi thật của model, **chập chờn**: chạy riêng R10 thêm 5 lần với cùng model → 4/5 PASS (đúng "Tiêm phòng cho mèo — 1.200.000đ"). Tool `search_transactions` trả đúng dữ liệu ở các lần PASS và ở R08/R09/R11 cùng lượt → không phải lỗi code |
+| deepseek-v4-flash | 1 | F09 "Bố được thưởng 2 triệu rưỡi…" | `ask_user` hỏi "nguồn thu là gì?" | lỗi thật (nhẹ — hỏi thừa, như deepseek-3.2 đợt 1); số tiền nêu đúng 2,5 triệu |
+| deepseek-v4-flash | 2 | T02 "Tạo việc mua quà sinh nhật bà…" | `ask_user` hỏi "giao cho ai?" | lỗi thật (nhẹ — hỏi thừa; cùng kiểu ở smoke phase 8) |
+| deepseek-v4-flash | 2 | R13 "Sinh nhật bà vào ngày nào?" | `MSG_GAVE_UP` sau 6 request | lỗi thật (model bỏ cuộc) |
+| deepseek-v4-flash | 2 | A03 "Xoá lịch sinh nhật" | Tự chọn "Sinh nhật bà" (bỏ qua mơ hồ), tool từ chối vì lịch do Bố Minh tạo (đúng luật quyền) → trả `answer` | lỗi thật — không hỏi lại; kiểm quyền của tool chạy đúng |
+
+**Không thấy lỗi code production** → không sửa gì. An toàn đạt ở cả 6 lần: **0 sai số tiền, 0 "thu chi ngoài ý", 0
+request ghi, vượt quyền 5/5**. Các ca từng FAIL ở đợt 1/2 (S01, F05 "Thú cưng", A08/A09 số không đơn vị, P04 tách lịch,
+F01 ngày, C03) đều PASS ở cả 3 model.
+
+### Đối chiếu tiêu chí
+
+| Tiêu chí | Kết quả |
+| :-- | :-- |
+| ≥ 85% strict với model khuyến nghị, cả 2 lần | **Đạt** — `anthropic/claude-haiku-5.5` 100% / 100% (**model khuyến nghị**). Cũng đạt: `deepseek/deepseek-v4-pro` 98% / 98%, `deepseek/deepseek-v4-flash` 98% / 95% |
+| 0 operation thu chi sai số tiền | **Đạt** — 0 ở cả 6 lần |
+| 0 request ghi tới app | **Đạt** — 0 ở cả 6 lần |
+| Hồi quy phase 8 (smoke 10 câu, code cuối) | haiku-5.5 10/10, deepseek-v4-pro 9/10, deepseek-v4-flash 8/10 ([báo cáo phase 8](./phase-08-real-model.md), "Lần đo 3") |
+
+Chi phí OpenRouter (đọc từ `/api/v1/key`): haiku-5.5 + deepseek-v4-pro 4 lần × 57 câu ≈ **$0,66**; deepseek-v4-flash
+2 lần + 5 lần chạy lại R10 ≈ **$0,10**. Tổng đợt 3 ≈ $0,77 (smoke phase 8 5 model trước đó ≈ $0,11).
+
+**Kết luận đợt 3:** tiêu chí ≥ 85% strict **đạt** với code cuối, `anthropic/claude-haiku-5.5` là model khuyến nghị (đúng
+hết, nhanh nhất). `deepseek/deepseek-v4-flash` là lựa chọn rẻ nhất vẫn đạt ngưỡng. Lưu ý: đây là model qua OpenRouter,
+khác model `kr/*` qua router local ở đợt 1–2 — điểm cao hơn phản ánh cả model mạnh hơn lẫn đợt sửa `8bb4a81`.
+
 ## Đợt 2 (2026-10-10 → 11): sửa bộ chấm + prompt/tool, đo lại — **dở dang vì hết hạn mức router**
 
 ### Đã sửa (commit `8bb4a81`, TDD — agent 578 pytest, ruff + mypy sạch; Node 411 vitest + lint xanh)
@@ -147,9 +205,9 @@ Luật chấm (chi tiết ở docstring `run_eval.py`):
 
 ## Khuyến nghị: **chưa gỡ** `/api/assistant/chat`
 
-Plan đặt điều kiện gỡ: eval ≥ 85% **và** agent đã chạy ổn ≥ 1 bản phát hành. Hiện chưa đạt cả hai:
-1. Eval phase 9 đã chạy với model thật nhưng strict mới 74–84% (< 85%); chỉ đạt 86–91% sau khi trừ lỗi bộ chấm.
-2. 1.2.0/1.3.0/1.4.0 mới ở dạng nháp — chưa bản nào tới tay người dùng, RAM/độ ổn định trên Pi chưa đo (hoãn từ phase 7).
+Plan đặt điều kiện gỡ: eval ≥ 85% **và** agent đã chạy ổn ≥ 1 bản phát hành. Cập nhật 2026-10-11 (đợt 3):
+1. Eval ≥ 85% strict: **đã đạt** (haiku-5.5 100%/100% qua OpenRouter, code cuối). Trước đó đợt 1–2 strict 74–84%.
+2. Đã phát hành v1.2.0 (gộp M1–M3) nhưng **chưa chạy thật trên Pi** — RAM/độ ổn định chưa đo (hoãn từ phase 7) → vẫn chưa đủ điều kiện.
 3. Assistant cũ là **đường lui bắt buộc** (spec §2, §10): agent tắt, chưa cấu hình service, lệch `contractVersion`,
    router đổi model hay lỗi → app tự rơi về assistant cũ. Gỡ nó đồng nghĩa người dùng chưa cấu hình `AGENT_*` mất
    hẳn trợ lý.

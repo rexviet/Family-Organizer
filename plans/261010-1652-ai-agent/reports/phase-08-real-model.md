@@ -1,6 +1,6 @@
 # Phase 8 — thử 10 câu Việc/Lịch với model thật (2026-10-10)
 
-> **Kết quả hiện hành:** `kr/deepseek-3.2` **7/10 và 8/10**, 0 request ghi → đạt (xem "Lần đo 2"). Lần đo 1 qua OpenRouter không đo được — giữ lại bên dưới.
+> **Kết quả hiện hành:** code cuối (`8bb4a81`) qua OpenRouter (2026-10-11): `anthropic/claude-haiku-5.5` **10/10**, `deepseek/deepseek-v4-pro` 9/10, `deepseek/deepseek-v4-flash` 8/10 — 0 request ghi (xem "Lần đo 3"). Lần đo 2 (`kr/deepseek-3.2` 7/10 và 8/10) và lần đo 1 giữ lại bên dưới.
 
 - Runner: `agent/eval/phase8_smoke.py` (dùng lại khung `phase4_smoke.py`; không nằm trong image, không chạy bởi pytest). Chạy `run_turn` THẬT
   (instructions, 9 tool đọc, 3 tool đi chợ, 6 tool Việc/Lịch, `ask_user`, CodeMode, EndWhenSettled, output validator); app Node giả bằng
@@ -9,6 +9,35 @@
   `clarification` hoặc `answer` có "?".
 - Runner có lùi + thử lại khi nhà cung cấp trả 429 (15 → 30 → 60 s, tối đa 3 lần ≈ 105 s/câu rồi ghi lỗi nhà cung cấp), nghỉ giữa các câu.
 - Gọi qua OpenRouter (`https://openrouter.ai/api/v1`); khoá API chỉ nạp từ `agent/.env`, không ghi ở đâu.
+
+## Lần đo 3 — OpenRouter, code cuối `8bb4a81` (2026-10-11) — **ĐẠT** (3/5 model)
+
+Router local hết hạn mức tháng (402) → chạy qua OpenRouter (`AGENT_LLM_BASE_URL=https://openrouter.ai/api/v1`, khoá nạp
+từ `agent/.env`, model đè inline). Lệnh: `uv run python eval/phase8_smoke.py --report <tmp>`, mỗi model 1 lượt.
+
+| Model | Điểm | Request tới app | Method ≠ GET | 429 còn lại | Chậm nhất | Câu FAIL |
+| :-- | --: | --: | --: | --: | --: | :-- |
+| `anthropic/claude-haiku-5.5` | **10/10** | 26 | **0** | 0 | 4 s | – |
+| `deepseek/deepseek-v4-pro` | **9/10** | 26 | **0** | 0 | 19 s | 10 |
+| `deepseek/deepseek-v4-flash` | **8/10** | 25 | **0** | 0 | 21 s | 2, 4 |
+| `qwen/qwen3-coder-next` | **7/10** | 26 | **0** | 0 | 7 s | 2, 7, 10 |
+| `google/gemini-2.5-flash-lite` | 3/10 | 23 | **0** | 0 | 14 s | 1, 2, 3, 6, 7, 8, 9 |
+
+Đọc tay các câu FAIL:
+
+| Model | # | Model làm gì | Phân loại |
+| :-- | :-- | :-- | :-- |
+| deepseek-v4-pro | 10 | Câu mơ hồ (2 lịch sinh nhật) nhưng đề xuất xoá luôn `p3` không hỏi lại | lỗi thật — vẫn chỉ là đề xuất, phải Duyệt |
+| deepseek-v4-flash | 2 | `ask_user` hỏi "giao cho ai?" dù câu không cần người nhận | lỗi thật (nhẹ — hỏi thừa) |
+| deepseek-v4-flash | 4 | Hỏi "tạo mới hay chuyển việc có sẵn?" thay vì tìm "dọn phòng" (`t3`) | lỗi thật (nhẹ) |
+| qwen3-coder-next | 2 | Hạn `2026-10-18 23:59` (Chủ nhật) thay vì thứ Sáu 16/10 | lỗi thật — sai ngày |
+| qwen3-coder-next | 7 | "Không tìm thấy buổi họp lớp ngày mai" (tìm theo ngày đích thay vì tên) | lỗi thật |
+| qwen3-coder-next | 10 | `MSG_GAVE_UP` — model bỏ cuộc | lỗi thật |
+| gemini-2.5-flash-lite | 7 câu | Phần lớn trả `answer` 0 tool call ("không tạo được", hỏi lại, xin lỗi) | lỗi thật — model không dùng được tool CodeMode |
+
+Câu 9 (lịch lặp thứ Ba + thứ Năm) nay **một lịch `[2, 4]`** ở cả 4 model dùng được — Ví dụ 6 của đợt sửa phase 9 có tác
+dụng. Tiêu chí phase 8 (≥ 7/10, 0 request ghi) đạt với haiku-5.5, deepseek-v4-pro, deepseek-v4-flash, qwen3-coder-next;
+gemini-2.5-flash-lite **không dùng được**. Không model nào gửi request ghi.
 
 ## Lần đo 2 — `kr/deepseek-3.2` qua router local (2026-10-10) — **ĐẠT**
 

@@ -66,7 +66,7 @@ kiểu `LLM_API_KEY` của service khác trong stack không ảnh hưởng.
 
 | Model | Điểm 10 câu | Ghi chú |
 | :--- | :--- | :--- |
-| `kr/deepseek-3.2` | 10/10 | **Khuyến nghị mặc định**; chậm hơn (đến ~24 s câu đọc nhiều bước) |
+| `kr/deepseek-3.2` | 10/10 | Khuyến nghị thời spike (nay xem bảng eval phase 9 bên dưới); chậm hơn (đến ~24 s câu đọc nhiều bước) |
 | `kr/qwen3-coder-next` | 8/10 | |
 | `kr/claude-haiku-4.5` | 7–9/10 | Nhanh nhất (≤ 11 s) |
 | `kr/claude-sonnet-4.5` | 7/10 | |
@@ -80,11 +80,16 @@ Phase 4 (10 câu, [báo cáo](../plans/261010-1652-ai-agent/reports/phase-04-rea
 
 | Model | Eval 57 câu (strict) | Sai số tiền | Ghi chú |
 | :--- | :--- | --: | :--- |
-| `kr/deepseek-3.2` | Đợt 1: 77% / 84%. Đợt 2 (sau sửa, code chưa cuối): 72% — code cuối mới đo 15 câu khó: 12/15 | 0 | **Khuyến nghị**; dùng `ask_user` tốt hơn; chậm (≤ 55 s/câu, có câu > 100 s) |
-| `kr/claude-haiku-4.5` | Đợt 1: 75% / 74%. Đợt 2 (sau sửa, code chưa cuối): 84% | 0 | Nhanh (≤ 10 s/câu); hay hỏi lại bằng chữ thay vì `ask_user` |
+| `anthropic/claude-haiku-5.5` (OpenRouter) | **Đợt 3, code cuối: 100% / 100%** | 0 | **Khuyến nghị**; nhanh nhất (≤ 9 s/câu); smoke phase 8 10/10 |
+| `deepseek/deepseek-v4-pro` (OpenRouter) | Đợt 3, code cuối: 98% / 98% | 0 | Đạt ngưỡng; chậm hơn (≤ 51 s/câu); smoke phase 8 9/10 |
+| `deepseek/deepseek-v4-flash` (OpenRouter) | Đợt 3, code cuối: 98% / 95% | 0 | Đạt ngưỡng, **rẻ nhất**; đôi khi hỏi lại thừa; smoke phase 8 8/10 |
+| `qwen/qwen3-coder-next` (OpenRouter) | – (chỉ smoke phase 8: 7/10) | – | Chưa chạy eval 57 câu |
+| `google/gemini-2.5-flash-lite` (OpenRouter) | – (chỉ smoke phase 8: 3/10) | – | **Không dùng được** — hay trả lời 0 tool call |
+| `kr/deepseek-3.2` (router local) | Đợt 1: 77% / 84%. Đợt 2 (sau sửa, code chưa cuối): 72% — code cuối mới đo 15 câu khó: 12/15 | 0 | Chậm (≤ 55 s/câu, có câu > 100 s) |
+| `kr/claude-haiku-4.5` (router local) | Đợt 1: 75% / 74%. Đợt 2 (sau sửa, code chưa cuối): 84% | 0 | Nhanh (≤ 10 s/câu); hay hỏi lại bằng chữ thay vì `ask_user` |
 
-Mọi lần: 0 request ghi tới app, câu vượt quyền 5/5. Ngưỡng ≥ 85% strict **chưa chứng minh** — đo lại với code cuối bị
-chặn vì router hết hạn mức tháng (402); chạy lại lệnh ở mục "Eval" rồi cập nhật bảng.
+Mọi lần: 0 request ghi tới app, câu vượt quyền 5/5. Ngưỡng ≥ 85% strict **đạt** với code cuối (đợt 3, 2026-10-11,
+OpenRouter: `AGENT_LLM_BASE_URL=https://openrouter.ai/api/v1`). Router `kr/*` hết hạn mức tháng nên chưa đo lại code cuối.
 
 ## Eval
 

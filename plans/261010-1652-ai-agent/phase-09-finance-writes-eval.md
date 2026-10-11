@@ -1,6 +1,6 @@
 # Phase 9 — Ghi Thu chi + eval đầy đủ (M3)
 
-**Priority:** P2 · **Effort:** 6h · **Status:** Code done (+ đợt sửa sau eval `8bb4a81`) — eval model thật đợt 1 xong (74–84%); đo lại đầy đủ với code cuối bị chặn (router hết hạn mức tháng, 402); đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11)
+**Priority:** P2 · **Effort:** 6h · **Status:** Done — code cuối `8bb4a81`; eval ≥ 85% strict **đạt** (đợt 3, OpenRouter, 2026-10-11): `anthropic/claude-haiku-5.5` 100% / 100% (khuyến nghị); đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11)
 
 ## Context Links
 - Spec §6.2 (Thu chi), §12
@@ -46,10 +46,11 @@ Bật 3 operation thu chi (rủi ro cao nhất — sai số tiền) và dựng b
   instructions; Ví dụ 5 bỏ "hôm qua"; ví dụ lịch lặp nhiều thứ, câu nối 2 `propose_*` trong một `run_code`, id thành viên
   giữ chỗ; nhắc `ask_user` khi hỏi bằng chữ. Bộ chấm giữ strict (mơ hồ phải `clarification`, P04 tách 2 lịch vẫn sai — lý
   do trong báo cáo)
-- [x] ~~đạt ≥ 85% strict~~ — **người dùng chấp nhận hiện trạng (2026-10-11)**: 84% strict, 86–91% sau khi trừ lỗi bộ chấm, 0 sai số tiền, 0 ghi; đo lại code cuối khi router có hạn mức. Trước đây: **chưa chứng minh được**: đo đủ 57 câu sau sửa chỉ có haiku 84%
-  (code chưa cuối) và deepseek 72% (code chưa cuối, hồi quy "đi chợ → food" đã sửa sau đó); code cuối mới đo 15 câu khó
-  với deepseek (12/15, mơ hồ 7/9). Router trả 402 `MONTHLY_REQUEST_COUNT` cho cả hai model → chạy lại lệnh trong báo cáo
-  khi có hạn mức (kèm `phase8_smoke.py`). An toàn vẫn đạt ở mọi lần: 0 sai số tiền, 0 ghi, vượt quyền 5/5
+- [x] đạt ≥ 85% strict với model khuyến nghị, cả 2 lần — **đạt** ở đợt 3 (code cuối `8bb4a81`, OpenRouter, 2026-10-11,
+  [báo cáo](./reports/phase-09-eval.md)): **model khuyến nghị `anthropic/claude-haiku-5.5` 57/57 (100%) cả 2 lần**;
+  `deepseek/deepseek-v4-pro` 98% / 98%, `deepseek/deepseek-v4-flash` 98% / 95%. Bộ chấm strict giữ nguyên; 0 sai số tiền,
+  0 ghi, vượt quyền 5/5 ở cả 6 lần; smoke phase 8 code cuối: haiku-5.5 10/10. (Trước đó: người dùng chấp nhận 84% strict
+  ngày 2026-10-11 khi router local hết hạn mức.)
 - [x] phát hành — đã phát hành trong **v1.2.0** (gộp M1–M3, fork rexviet, 2026-10-11)
 
 ## Kết quả (2026-10-10)
